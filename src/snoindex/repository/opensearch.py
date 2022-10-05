@@ -2,6 +2,10 @@ from dataclasses import dataclass
 
 from opensearchpy import OpenSearch
 
+from opensearchpy.helpers import bulk
+
+from opensearch_dsl import Search
+
 from snoindex.domain.item import Item
 
 from typing import Any
@@ -71,6 +75,12 @@ class Opensearch:
             request_timeout=30,
             version=item.version,
             version_type='external_gte',
+        )
+
+    def bulk_index_items(self, items: List[Item]) -> None:
+        helpers.bulk(
+            self.props.client,
+            items,
         )
 
     def refresh_resources_index(self) -> None:

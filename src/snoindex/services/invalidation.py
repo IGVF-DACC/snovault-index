@@ -119,7 +119,7 @@ class InvalidationService:
             self.tracker.handled_messages
         )
 
-    def get_new_messages_from_transaction_queue(self) -> None:
+    def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(
             self.props.transaction_queue.get_messages(
                 desired_number_of_messages=self.props.messages_to_handle_per_run
@@ -134,7 +134,7 @@ class InvalidationService:
         self.tracker.clear()
 
     def run_once(self) -> None:
-        self.get_new_messages_from_transaction_queue()
+        self.get_new_messages_from_queue()
         self.try_to_handle_messages()
         self.mark_handled_messages_as_processed()
         self.log_stats()
