@@ -1,8 +1,11 @@
+import logging
+import time
+
 from dataclasses import dataclass
 
 from opensearchpy import OpenSearch
 
-from opensearchpy.helpers import bulk
+from opensearchpy import helpers
 
 from opensearch_dsl import Search
 
@@ -15,7 +18,7 @@ from typing import Optional
 
 
 def get_related_uuids_query(updated, renamed) -> Dict[str, Any]:
-    query = {
+    return {
         'query': {
             'bool': {
                 'should': [
@@ -68,7 +71,7 @@ class Opensearch:
             yield hit.meta.id
 
     def index_item(self, item: Item) -> None:
-        self.props.opensearch_client.index(
+        self.props.client.index(
             index=item.index,
             body=item.data,
             id=item.uuid,
@@ -80,7 +83,10 @@ class Opensearch:
     def bulk_index_items(self, items: List[Item]) -> None:
         helpers.bulk(
             self.props.client,
-            items,
+            (
+                item.as_bulk_action()
+                for item in items
+            ),
         )
 
     def refresh_resources_index(self) -> None:

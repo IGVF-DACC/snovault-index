@@ -34,8 +34,8 @@ class PortalProps:
 
 class Portal:
 
-    def __init__(self):
-        pass
+    def __init__(self, props: PortalProps):
+        self.props = props
 
     def _make_index_data_view_url_from_uuid(self, uuid) -> str:
         return (
@@ -74,7 +74,7 @@ class Portal:
                 continue
 
     def _make_access_key_url(self) -> str:
-        return f'{self.props.backend_url}/access-keys/?datastore=database',
+        return f'{self.props.backend_url}/access-keys/?datastore=database'
 
     def wait_for_access_key_to_exist(self):
         logging.warning('Checking for access key')

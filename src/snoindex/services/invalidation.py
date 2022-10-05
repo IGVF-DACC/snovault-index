@@ -1,9 +1,16 @@
+import logging
+
 from dataclasses import dataclass
 
+from snoindex.domain.message import OutboundMessage
+
 from snoindex.domain.tracker import MessageTracker
+
 from snoindex.repository.queue.sqs import SQSQueue
-from snoindex.repository.queue.message import OutboundMessage
+
 from snoindex.repository.opensearch import Opensearch
+
+from typing import List
 
 
 @dataclass
@@ -14,12 +21,12 @@ class InvalidationServiceProps:
     messages_to_handle_per_run: int = 1
 
 
-def get_updated_uuids_from_transaction(message):
-    message.json_body['data']['payload']['updated']
+def get_updated_uuids_from_transaction(message) -> List[str]:
+    return message.json_body['data']['payload']['updated']
 
 
-def get_renamed_uuids_from_transaction(message):
-    payload = message.json_body['data']['payload']['renamed']
+def get_renamed_uuids_from_transaction(message) -> List[str]:
+    return message.json_body['data']['payload']['renamed']
 
 
 def get_all_uuids_from_transaction(message):
@@ -94,15 +101,15 @@ class InvalidationService:
                 )
             )
         self.props.invalidation_queue.send_messages(
-                outbound_messages
+            outbound_messages
         )
 
-    def handle_message(self, messages) -> None:
+    def handle_message(self, message) -> None:
         self.invalidate_all_uuids_from_transaction(message)
         self.invalidate_all_related_uuids(message)
         self.tracker.add_handled_messages([message])
 
-    def try_to_handle_messages(self, messages) -> None:
+    def try_to_handle_messages(self) -> None:
         for message in self.tracker.new_messages:
             try:
                 self.handle_message(message)

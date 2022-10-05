@@ -1,9 +1,14 @@
+import logging
+
 from dataclasses import dataclass
 
 from snoindex.domain.tracker import MessageTracker
+
 from snoindex.repository.queue.sqs import SQSQueue
-from snoindex.remote.portal import Portal
+
 from snoindex.repository.opensearch import Opensearch
+
+from snoindex.remote.portal import Portal
 
 
 def get_uuid_and_version_from_message(message):
@@ -32,7 +37,7 @@ class IndexingService:
         self.props.opensearch.index_item(item)
         self.tracker.add_handled_messages([message])
 
-    def try_to_handle_messages(self, messages) -> None:
+    def try_to_handle_messages(self) -> None:
         for message in self.tracker.new_messages:
             try:
                 self.handle_message(message)
@@ -44,9 +49,14 @@ class IndexingService:
                     ]
                 )
 
+    def mark_handled_messages_as_processed(self) -> None:
+        self.props.invalidation_queue.mark_as_processed(
+            self.tracker.handled_messages
+        )
+
     def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(
-            self.props.invalidation_queue_queue.get_messages(
+            self.props.invalidation_queue.get_messages(
                 desired_number_of_messages=self.props.messages_to_handle_per_run
             )
         )
@@ -105,12 +115,19 @@ class BulkIndexingService:
 
     def try_to_handle_messages(self) -> None:
         try:
-            self.handle_messages()
+            self.handle_messages(
+                self.tracker.new_messages
+            )
         except Exception as e:
             logging.error(e)
             self.tracker.add_failed_messages(
                 self.tracker.new_messages
             )
+
+    def mark_handled_messages_as_processed(self) -> None:
+        self.props.bulk_invalidation_queue.mark_as_processed(
+            self.tracker.handled_messages
+        )
 
     def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(

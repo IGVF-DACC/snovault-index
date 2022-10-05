@@ -10,11 +10,11 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 
-from snoindex.queue.constants import AWS_SQS_MAX_NUMBER
+from snoindex.repository.queue.constants import AWS_SQS_MAX_NUMBER
 
-from snoindex.queue.message import convert_received_messages
-from snoindex.queue.message import InboundMessage
-from snoindex.queue.message import OutboundMessage
+from snoindex.domain.message import convert_received_messages
+from snoindex.domain.message import InboundMessage
+from snoindex.domain.message import OutboundMessage
 
 
 def batch(items, batchsize=AWS_SQS_MAX_NUMBER):

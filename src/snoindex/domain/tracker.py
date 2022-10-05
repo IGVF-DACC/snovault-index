@@ -1,5 +1,6 @@
 class MessageTracker:
 
+
     def __init__(self):
         self.clear_stats()
         self.clear()
