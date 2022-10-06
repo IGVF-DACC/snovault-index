@@ -48,6 +48,7 @@ def test_services_invalidation_invalidation_service_mark_handled_messages_as_pro
 def test_services_invalidation_invalidation_service_get_new_messages_from_queue():
     assert False
 
+
 def test_services_invalidation_invalidation_service_log_stats():
     assert False
 

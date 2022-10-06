@@ -47,4 +47,3 @@ def test_repository_queue_sqs_queue_has_zero_messages():
 
 def test_repository_queue_sqs_wait_for_queue_to_drain():
     assert False
- 
