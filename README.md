@@ -8,8 +8,9 @@ $ pip install mypy
 $ mypy . --strict --ignore-missing-imports
 ```
 
-## Run precommit
+## Run pre-commit
 ```bash
 $ pip install pre-commit==2.17.0
 $ pre-commit install
+$ pre-commit run --all-files
 ```
