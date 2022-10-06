@@ -2,6 +2,11 @@
 
 Queue-based services for invalidating and indexing Opensearch documents.
 
+## Run tests
+```bash
+$ docker compose -f docker-compose.test.yml up --exit-code-from snoindex
+```
+
 ## Run mypy
 ```bash
 $ pip install mypy
