@@ -32,4 +32,4 @@ RUN python -m pip install --upgrade pip
 
 RUN pip install -e .[test]
 
-CMD ["pytest -rf"]
+COPY --chown=snoindex:snoindex . .
