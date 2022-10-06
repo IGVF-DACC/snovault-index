@@ -10,7 +10,6 @@ RUN useradd -u 1444 -m snoindex
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    gcc \
     git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
