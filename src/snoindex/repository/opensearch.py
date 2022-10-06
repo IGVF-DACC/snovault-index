@@ -13,11 +13,12 @@ from snoindex.domain.item import Item
 
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
 
 
-def get_related_uuids_query(updated, renamed) -> Dict[str, Any]:
+def get_related_uuids_query(updated: List[str], renamed: List[str]) -> Dict[str, Any]:
     return {
         'query': {
             'bool': {
@@ -39,7 +40,7 @@ def get_related_uuids_query(updated, renamed) -> Dict[str, Any]:
     }
 
 
-def get_search(client, index):
+def get_search(client: OpenSearch, index: Optional[str]) -> Search:
     return Search(
         using=client,
         index=index,
@@ -58,10 +59,13 @@ class Opensearch:
         self.props = props
         self._search = None
 
-    def get_related_uuids_from_updated_and_renamed(self, updated, renamed):
+    def get_related_uuids_from_updated_and_renamed(self, updated: List[str], renamed: List[str]) -> Iterator[str]:
         self.refresh_resources_index()
         query = get_related_uuids_query(updated, renamed)
-        search = get_search()
+        search = get_search(
+            self.props.client,
+            self.props.resources_index,
+        )
         search = search.update_from_dict(
             query
         ).params(

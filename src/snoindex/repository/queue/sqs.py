@@ -17,7 +17,7 @@ from snoindex.domain.message import InboundMessage
 from snoindex.domain.message import OutboundMessage
 
 
-def batch(items, batchsize=AWS_SQS_MAX_NUMBER):
+def batch(items: List[Any], batchsize: int = AWS_SQS_MAX_NUMBER) -> Iterable[List[Any]]:
     for i in range(0, len(items), batchsize):
         yield items[i:i + batchsize]
 
@@ -32,10 +32,10 @@ class SQSQueueProps:
 
 class SQSQueue:
 
-    def __init__(self, *args, props, **kwargs):
+    def __init__(self, *args: Any, props: SQSQueueProps, **kwargs: Any) -> None:
         self.props = props
 
-    def _send_messages(self, messages: List[OutboundMessage]):
+    def _send_messages(self, messages: List[OutboundMessage]) -> None:
         self.props.client.send_message_batch(
             QueueUrl=self.props.queue_url,
             Entries=[
@@ -47,14 +47,14 @@ class SQSQueue:
             ]
         )
 
-    def send_messages(self, messages: List[OutboundMessage]):
+    def send_messages(self, messages: List[OutboundMessage]) -> None:
         batched_messages = batch(messages, batchsize=AWS_SQS_MAX_NUMBER)
         for message_batch in batched_messages:
             self._send_messages(message_batch)
 
     def _get_messages(
             self,
-            max_number_of_messages=AWS_SQS_MAX_NUMBER
+            max_number_of_messages: int = AWS_SQS_MAX_NUMBER,
     ) -> List[InboundMessage]:
         response = self.props.client.receive_message(
             QueueUrl=self.props.queue_url,
@@ -89,7 +89,7 @@ class SQSQueue:
             for message in messages:
                 yield message
 
-    def _mark_as_processed(self, messages: List[InboundMessage]):
+    def _mark_as_processed(self, messages: List[InboundMessage]) -> None:
         self.props.client.delete_message_batch(
             QueueUrl=self.props.queue_url,
             Entries=[
@@ -101,18 +101,18 @@ class SQSQueue:
             ]
         )
 
-    def mark_as_processed(self, messages: List[InboundMessage]):
+    def mark_as_processed(self, messages: List[InboundMessage]) -> None:
         batched_messages = batch(messages, batchsize=AWS_SQS_MAX_NUMBER)
         for message_batch in batched_messages:
             self._mark_as_processed(message_batch)
 
-    def info(self) -> Dict[str, Any]:
+    def info(self) -> Any:
         return self.props.client.get_queue_attributes(
             QueueUrl=self.props.queue_url,
             AttributeNames=['All']
         )['Attributes']
 
-    def wait_for_queue_to_exist(self):
+    def wait_for_queue_to_exist(self) -> None:
         logging.warning(f'Connecting to queue: {self.props.queue_url}')
         caught = None
         for attempt in range(1, 4):
@@ -125,7 +125,7 @@ class SQSQueue:
                 continue
             raise caught
 
-    def _queue_has_zero_messages(self):
+    def _queue_has_zero_messages(self) -> bool:
         info = self.info()
         conditions = [
             info['ApproximateNumberOfMessages'] == '0',
@@ -137,7 +137,7 @@ class SQSQueue:
             self,
             number_of_checks: int = 3,
             seconds_between_checks: int = 3
-    ):
+    ) -> None:
         checks_left = number_of_checks
         while True:
             if self._queue_has_zero_messages():

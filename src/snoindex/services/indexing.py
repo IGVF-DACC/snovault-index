@@ -2,6 +2,8 @@ import logging
 
 from dataclasses import dataclass
 
+from snoindex.domain.message import InboundMessage
+
 from snoindex.domain.tracker import MessageTracker
 
 from snoindex.repository.queue.sqs import SQSQueue
@@ -10,10 +12,13 @@ from snoindex.repository.opensearch import Opensearch
 
 from snoindex.remote.portal import Portal
 
+from typing import List
+from typing import Tuple
 
-def get_uuid_and_version_from_message(message):
+
+def get_uuid_and_version_from_message(message: InboundMessage) -> Tuple[str, int]:
     uuid = message.json_body['data']['uuid']
-    version = message.json_body['metadata']['xid']
+    version = int(message.json_body['metadata']['xid'])
     return (uuid, version)
 
 
@@ -27,11 +32,11 @@ class IndexingServiceProps:
 
 class IndexingService:
 
-    def __init__(self, props: IndexingServiceProps):
+    def __init__(self, props: IndexingServiceProps) -> None:
         self.props = props
         self.tracker = MessageTracker()
 
-    def handle_message(self, message) -> None:
+    def handle_message(self, message: InboundMessage) -> None:
         uuid, version = get_uuid_and_version_from_message(message)
         item = self.props.portal.get_item(uuid, version)
         self.props.opensearch.index_item(item)
@@ -56,8 +61,10 @@ class IndexingService:
 
     def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(
-            self.props.invalidation_queue.get_messages(
-                desired_number_of_messages=self.props.messages_to_handle_per_run
+            list(
+                self.props.invalidation_queue.get_messages(
+                    desired_number_of_messages=self.props.messages_to_handle_per_run
+                )
             )
         )
 
@@ -75,7 +82,7 @@ class IndexingService:
         self.log_stats()
         self.clear()
 
-    def poll(self):
+    def poll(self) -> None:
         while True:
             self.run_once()
 
@@ -90,11 +97,11 @@ class BulkIndexingServiceProps:
 
 class BulkIndexingService:
 
-    def __init__(self, props: BulkIndexingServiceProps):
+    def __init__(self, props: BulkIndexingServiceProps) -> None:
         self.props = props
         self.tracker = MessageTracker()
 
-    def handle_messages(self, messages) -> None:
+    def handle_messages(self, messages: List[InboundMessage]) -> None:
         items = []
         for message in messages:
             uuid, version = get_uuid_and_version_from_message(
@@ -131,8 +138,10 @@ class BulkIndexingService:
 
     def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(
-            self.props.bulk_invalidation_queue.get_messages(
-                desired_number_of_messages=self.props.messages_to_handle_per_run
+            list(
+                self.props.bulk_invalidation_queue.get_messages(
+                    desired_number_of_messages=self.props.messages_to_handle_per_run
+                )
             )
         )
 
@@ -150,6 +159,6 @@ class BulkIndexingService:
         self.log_stats()
         self.clear()
 
-    def poll(self):
+    def poll(self) -> None:
         while True:
             self.run_once()

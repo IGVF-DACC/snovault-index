@@ -2,6 +2,7 @@ import logging
 
 from dataclasses import dataclass
 
+from snoindex.domain.message import InboundMessage
 from snoindex.domain.message import OutboundMessage
 
 from snoindex.domain.tracker import MessageTracker
@@ -10,7 +11,9 @@ from snoindex.repository.queue.sqs import SQSQueue
 
 from snoindex.repository.opensearch import Opensearch
 
+from typing import Any
 from typing import List
+from typing import cast
 
 
 @dataclass
@@ -21,15 +24,21 @@ class InvalidationServiceProps:
     messages_to_handle_per_run: int = 1
 
 
-def get_updated_uuids_from_transaction(message) -> List[str]:
-    return message.json_body['data']['payload']['updated']
+def get_updated_uuids_from_transaction(message: InboundMessage) -> List[str]:
+    return cast(
+        List[str],
+        message.json_body['data']['payload']['updated'],
+    )
 
 
-def get_renamed_uuids_from_transaction(message) -> List[str]:
-    return message.json_body['data']['payload']['renamed']
+def get_renamed_uuids_from_transaction(message: InboundMessage) -> List[str]:
+    return cast(
+        List[str],
+        message.json_body['data']['payload']['renamed']
+    )
 
 
-def get_all_uuids_from_transaction(message):
+def get_all_uuids_from_transaction(message: InboundMessage) -> List[str]:
     uuids = set()
     uuids.update(
         get_updated_uuids_from_transaction(message)
@@ -40,13 +49,13 @@ def get_all_uuids_from_transaction(message):
     return list(uuids)
 
 
-def make_unique_id(uuid, xid):
+def make_unique_id(uuid: str, xid: str) -> str:
     return f'{uuid}-{xid}'
 
 
-def make_outbound_message(message, uuid):
+def make_outbound_message(message: InboundMessage, uuid: str) -> OutboundMessage:
     xid = message.json_body['metadata']['xid']
-    message = {
+    body = {
         'metadata': {
             'xid': xid,
             'tid': message.json_body['metadata']['tid'],
@@ -57,19 +66,19 @@ def make_outbound_message(message, uuid):
     }
     outbound_message = OutboundMessage(
         unique_id=make_unique_id(uuid, xid),
-        body=message,
+        body=body,
     )
     return outbound_message
 
 
 class InvalidationService:
 
-    def __init__(self, props: InvalidationServiceProps):
+    def __init__(self, props: InvalidationServiceProps) -> None:
         self.props = props
         self.tracker = MessageTracker()
 
-    def invalidate_all_uuids_from_transaction(self, message):
-        outbound_messages = []
+    def invalidate_all_uuids_from_transaction(self, message: InboundMessage) -> None:
+        outbound_messages: List[OutboundMessage] = []
         uuids = get_all_uuids_from_transaction(message)
         for uuid in uuids:
             outbound_messages.append(
@@ -82,9 +91,9 @@ class InvalidationService:
             outbound_messages
         )
 
-    def invalidate_all_related_uuids(self, message):
+    def invalidate_all_related_uuids(self, message: InboundMessage) -> None:
         outbound_messages = []
-        already_invalidated_uuids = get_all_uuids_from_transaction(messages)
+        already_invalidated_uuids = get_all_uuids_from_transaction(message)
         updated = get_updated_uuids_from_transaction(message)
         renamed = get_renamed_uuids_from_transaction(message)
         related_uuids = self.props.opensearch.get_related_uuids_from_updated_and_renamed(
@@ -104,7 +113,7 @@ class InvalidationService:
             outbound_messages
         )
 
-    def handle_message(self, message) -> None:
+    def handle_message(self, message: InboundMessage) -> None:
         self.invalidate_all_uuids_from_transaction(message)
         self.invalidate_all_related_uuids(message)
         self.tracker.add_handled_messages([message])
@@ -128,8 +137,10 @@ class InvalidationService:
 
     def get_new_messages_from_queue(self) -> None:
         self.tracker.add_new_messages(
-            self.props.transaction_queue.get_messages(
-                desired_number_of_messages=self.props.messages_to_handle_per_run
+            list(
+                self.props.transaction_queue.get_messages(
+                    desired_number_of_messages=self.props.messages_to_handle_per_run
+                )
             )
         )
 
@@ -147,6 +158,6 @@ class InvalidationService:
         self.log_stats()
         self.clear()
 
-    def poll(self):
+    def poll(self) -> None:
         while True:
             self.run_once()

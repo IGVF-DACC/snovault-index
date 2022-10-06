@@ -2,6 +2,8 @@ import logging
 import time
 import requests
 
+from requests import Response
+
 from dataclasses import dataclass
 
 from snoindex.domain.item import Item
@@ -14,11 +16,11 @@ from typing import Tuple
 INDEX_DATA_VIEW = '@@index-data-external'
 
 
-def make_remote_request(url):
+def make_remote_request(url: str) -> Response:
     return requests.get(url)
 
 
-def make_authorized_remote_request(url, auth):
+def make_authorized_remote_request(url: str, auth: Tuple[str, str]) -> Response:
     return requests.get(
         url,
         auth=auth,
@@ -34,23 +36,23 @@ class PortalProps:
 
 class Portal:
 
-    def __init__(self, props: PortalProps):
+    def __init__(self, props: PortalProps) -> None:
         self.props = props
 
-    def _make_index_data_view_url_from_uuid(self, uuid) -> str:
+    def _make_index_data_view_url_from_uuid(self, uuid: str) -> str:
         return (
             f'{self.props.backend_url}/{uuid}/{self.props.index_data_view}'
             '/?datastore=database'
         )
 
-    def get_raw_item_by_uuid(self, uuid: str) -> Dict[str, Any]:
+    def get_raw_item_by_uuid(self, uuid: str) -> Any:
         url = self._make_index_data_view_url_from_uuid(uuid)
         return make_authorized_remote_request(
             url,
             self.props.auth,
         ).json()
 
-    def get_item(self, uuid, version) -> Item:
+    def get_item(self, uuid: str, version: int) -> Item:
         raw_item = self.get_raw_item_by_uuid(uuid)
         return Item(
             data=raw_item,
@@ -59,7 +61,7 @@ class Portal:
             index=raw_item['item_type'],
         )
 
-    def wait_for_portal_connection(self):
+    def wait_for_portal_connection(self) -> None:
         logging.warning('Waiting for portal connection')
         url = self.props.backend_url
         attempt = 0
@@ -76,7 +78,7 @@ class Portal:
     def _make_access_key_url(self) -> str:
         return f'{self.props.backend_url}/access-keys/?datastore=database'
 
-    def wait_for_access_key_to_exist(self):
+    def wait_for_access_key_to_exist(self) -> None:
         logging.warning('Checking for access key')
         url = self._make_access_key_url()
         attempt = 0

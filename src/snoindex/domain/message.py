@@ -15,7 +15,7 @@ class InboundMessage:
     body: str
 
     @property
-    def json_body(self) -> Dict[str, Any]:
+    def json_body(self) -> Any:
         return json.loads(
             self.body
         )
