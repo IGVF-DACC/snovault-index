@@ -12,13 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gcc \
     git \
-    graphviz \
-    libjpeg-dev \
-    libmagic-dev \
-    libpq-dev \
-    libsqlite3-dev \
-    make \
-    zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
