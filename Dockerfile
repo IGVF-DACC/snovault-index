@@ -8,6 +8,10 @@ ENV VIRTUAL_ENV=/opt/venv
 
 RUN useradd -u 1444 -m snoindex
 
+RUN mkdir -p /snovault-index
+
+RUN chown -R snoindex:snoindex /snovault-index
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
