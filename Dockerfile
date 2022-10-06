@@ -28,7 +28,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN chown -R snoindex:snoindex $VIRTUAL_ENV
 
-WORKDIR /igvfd
+WORKDIR /snovault-index
 
 COPY --chown=snoindex:snoindex setup.cfg pyproject.toml ./
 

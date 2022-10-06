@@ -57,9 +57,12 @@ class Opensearch:
 
     def __init__(self, props: OpensearchProps):
         self.props = props
-        self._search = None
 
-    def get_related_uuids_from_updated_and_renamed(self, updated: List[str], renamed: List[str]) -> Iterator[str]:
+    def get_related_uuids_from_updated_and_renamed(
+            self,
+            updated: List[str],
+            renamed: List[str],
+    ) -> Iterator[str]:
         self.refresh_resources_index()
         query = get_related_uuids_query(updated, renamed)
         search = get_search(
