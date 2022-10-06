@@ -34,7 +34,7 @@ def get_updated_uuids_from_transaction(message: InboundMessage) -> List[str]:
 def get_renamed_uuids_from_transaction(message: InboundMessage) -> List[str]:
     return cast(
         List[str],
-        message.json_body['data']['payload']['renamed']
+        message.json_body['data']['payload']['renamed'],
     )
 
 
@@ -84,7 +84,7 @@ class InvalidationService:
             outbound_messages.append(
                 make_outbound_message(
                     message,
-                    uuid
+                    uuid,
                 )
             )
         self.props.invalidation_queue.send_messages(
