@@ -106,6 +106,8 @@ class Opensearch:
             while True:
                 attempt += 1
                 if self.props.client.indices.exists(self.props.resources_index):
-                    logging.warning(f'Found resources index, attempt {attempt}')
+                    logging.warning(
+                        f'Found resources index, attempt {attempt}'
+                    )
                     break
             time.sleep(attempt * 5)

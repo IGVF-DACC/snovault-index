@@ -7,7 +7,6 @@ from typing import List
 
 class MessageTracker:
 
-
     def __init__(self) -> None:
         self.clear_stats()
         self.clear()

@@ -146,7 +146,9 @@ class InvalidationService:
 
     def log_stats(self) -> None:
         if self.tracker.number_all_messages % 100 == 0:
-            logging.warning(f'{self.__class__.__name__}: {self.tracker.stats()}')
+            logging.warning(
+                f'{self.__class__.__name__}: {self.tracker.stats()}'
+            )
 
     def clear(self) -> None:
         self.tracker.clear()
