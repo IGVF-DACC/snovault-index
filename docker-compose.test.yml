@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+
+  snoindex:
+    build:
+      context: .
+    image: snoindex
+    volumes:
+      - ".:/snoindex"
+      - "/igvfd/src/igvfd.egg-info"
+    command: pytest
