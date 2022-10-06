@@ -83,6 +83,7 @@ class Portal:
         url = self._make_access_key_url()
         attempt = 0
         while True:
+            attempt += 1
             response = make_authorized_remote_request(
                 url,
                 self.props.auth,
