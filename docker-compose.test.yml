@@ -7,6 +7,6 @@ services:
       context: .
     image: snoindex
     volumes:
-      - ".:/snoindex"
-      - "/igvfd/src/igvfd.egg-info"
+      - ".:/snovault-index"
+      - "/snovault-index/src/snovault_index.egg-info"
     command: pytest --cov=snoindex -s -o junit_family=legacy --junitxml=./.test-results/junit.xml
