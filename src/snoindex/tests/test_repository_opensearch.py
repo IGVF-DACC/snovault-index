@@ -45,12 +45,64 @@ def test_repository_opensearch_opensearch_init(opensearch_props):
     assert isinstance(os, Opensearch)
 
 
-def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_renamed():
-    assert False
+@pytest.mark.integration
+def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_renamed(opensearch_props, mocked_portal, generic_mapping):
+    from snoindex.repository.opensearch import Opensearch
+    os = Opensearch(
+        props=opensearch_props
+    )
+    os.clear()
+    os.props.client.indices.create(
+        index=os.props.resources_index, body=generic_mapping)
+    item = mocked_portal.get_item('xyz123', 4)
+    os.index_item(item)
+    related_uuids = list(
+        os.get_related_uuids_from_updated_and_renamed(
+            updated=[],
+            renamed=[],
+        )
+    )
+    assert len(related_uuids) == 0
+    related_uuids = list(
+        os.get_related_uuids_from_updated_and_renamed(
+            updated=['09d05b87-4d30-4dfb-b243-3327005095f2'],
+            renamed=[],
+        )
+    )
+    assert len(related_uuids) == 1
+    assert related_uuids[0] == 'xyz123'
+    item = mocked_portal.get_item('xyz345', 4)
+    os.index_item(item)
+    related_uuids = list(
+        os.get_related_uuids_from_updated_and_renamed(
+            updated=[],
+            renamed=['dfc72c8c-d45c-4acd-979b-49fc93cf3c62'],
+        )
+    )
+    assert len(related_uuids) == 2
+    assert 'xyz123' in related_uuids
+    assert 'xyz345' in related_uuids
 
 
-def test_repository_opensearch_opensearch_index_item():
-    assert False
+@pytest.mark.integration
+def test_repository_opensearch_opensearch_index_item(opensearch_repository, mocked_portal, get_all_results):
+    item = mocked_portal.get_item('xyz123', 4)
+    opensearch_repository.index_item(item)
+    opensearch_repository.refresh_resources_index()
+    for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
+        assert hit['_version'] == 4
+    # Higher version allowed.
+    item = mocked_portal.get_item('xyz123', 5)
+    opensearch_repository.index_item(item)
+    opensearch_repository.refresh_resources_index()
+    for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
+        assert hit['_version'] == 5
+    # Lower version ignored.
+    item = mocked_portal.get_item('xyz123', 3)
+    opensearch_repository.index_item(item)
+    opensearch_repository.refresh_resources_index()
+    for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
+        assert hit['_version'] == 5
 
 
 def test_repository_opensearch_opensearch_bulk_index_items():

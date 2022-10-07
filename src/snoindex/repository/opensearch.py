@@ -7,6 +7,8 @@ from opensearchpy import OpenSearch
 
 from opensearchpy import helpers
 
+from opensearchpy.exceptions import ConflictError
+
 from opensearch_dsl import Search
 
 from snoindex.domain.item import Item
@@ -77,7 +79,7 @@ class Opensearch:
         for hit in search.scan():
             yield hit.meta.id
 
-    def index_item(self, item: Item) -> None:
+    def _index_item(self, item: Item) -> None:
         self.props.client.index(
             index=item.index,
             body=item.data,
@@ -86,6 +88,12 @@ class Opensearch:
             version=item.version,
             version_type='external_gte',
         )
+
+    def index_item(self, item: Item) -> None:
+        try:
+            self._index_item(item)
+        except ConflictError as e:
+            logging.warning(f'Skipping: {e}')
 
     def bulk_index_items(self, items: List[Item]) -> None:
         helpers.bulk(
@@ -114,3 +122,7 @@ class Opensearch:
                     )
                     break
             time.sleep(attempt * 5)
+
+    def clear(self) -> None:
+        for index in self.props.client.indices.get('*'):
+            self.props.client.indices.delete(index)

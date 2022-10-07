@@ -200,9 +200,9 @@ def mocked_portal(portal_props, raw_index_data_view, mocker):
 
 
 @pytest.fixture
-def opensearch_client():
+def opensearch_client(url='http://opensearch:9200'):
     from opensearchpy import OpenSearch
-    return OpenSearch()
+    return OpenSearch(url)
 
 
 @pytest.fixture
@@ -210,5 +210,131 @@ def opensearch_props(opensearch_client):
     from snoindex.repository.opensearch import OpensearchProps
     return OpensearchProps(
         client=opensearch_client,
-        resources_index='someindex',
+        resources_index='snowball',
     )
+
+
+@pytest.fixture
+def generic_mapping():
+    return {
+        'mappings': {
+            'dynamic_templates': [
+                {
+                    'template_principals_allowed': {
+                        'path_match': 'principals_allowed.*',
+                        'match_mapping_type': 'string',
+                        'mapping': {
+                            'type': 'keyword',
+                        },
+                    },
+                },
+                {
+                    'template_unique_keys': {
+                        'path_match': 'unique_keys.*',
+                        'match_mapping_type': 'string',
+                        'mapping': {
+                            'type': 'keyword',
+                            'copy_to': '_all',
+                        },
+                    },
+                },
+                {
+                    'template_links': {
+                        'path_match': 'links.*',
+                        'match_mapping_type': 'string',
+                        'mapping': {
+                            'type': 'keyword',
+                        },
+                    },
+                },
+                {
+                    'strings': {
+                        'match_mapping_type': 'string',
+                        'mapping': {
+                            'type': 'keyword',
+                        },
+                    },
+                },
+                {
+                    'integers': {
+                        'match_mapping_type': 'long',
+                        'mapping': {
+                            'type': 'long',
+                            'fields': {
+                                'raw': {
+                                    'type': 'keyword'
+                                }
+                            },
+                        },
+                    },
+                }
+            ],
+            'properties': {
+                '_all': {
+                    'type': 'text',
+                    'store': False,
+                },
+                'uuid': {
+                    'type': 'keyword',
+                    'copy_to': '_all',
+                },
+                'tid': {
+                    'type': 'keyword',
+                },
+                'item_type': {
+                    'type': 'keyword',
+                    'copy_to': '_all',
+                },
+                'object': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                'properties': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                'propsheets': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                'embedded_uuids': {
+                    'type': 'keyword',
+                },
+                'linked_uuids': {
+                    'type': 'keyword',
+                },
+                'paths': {
+                    'type': 'keyword',
+                }
+            }
+        }
+    }
+
+
+@pytest.fixture
+def get_all_results():
+    def search(client):
+        return client.search(
+            body={
+                'query': {
+                    'match_all': {},
+                }
+            },
+            version=True,
+        )
+    return search
+
+
+@pytest.fixture
+def opensearch_repository(opensearch_props, generic_mapping):
+    from snoindex.repository.opensearch import Opensearch
+    os = Opensearch(
+        props=opensearch_props
+    )
+    os.clear()
+    os.props.client.indices.create(
+        index=os.props.resources_index,
+        body=generic_mapping
+    )
+    yield os
+    os.clear()

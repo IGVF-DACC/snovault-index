@@ -5,8 +5,9 @@ services:
   snoindex:
     build:
       context: .
+      dockerfile: ./docker/snoindex/Dockerfile
     image: snoindex
     volumes:
       - ".:/snovault-index"
       - "/snovault-index/src/snovault_index.egg-info"
-    command: pytest --cov=snoindex -s -o junit_family=legacy --junitxml=./.test-results/junit.xml
+    command: pytest --cov=snoindex -s -o junit_family=legacy --junitxml=./.test-results/junit.xml -m 'not integration'
