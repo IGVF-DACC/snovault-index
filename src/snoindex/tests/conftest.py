@@ -183,4 +183,3 @@ def raw_index_data_view():
         },
         'uuid': '4cead359-10e9-49a8-9d20-f05b2499b919'
     }
-
