@@ -147,3 +147,16 @@ class SQSQueue:
             if checks_left <= 0:
                 break
             time.sleep(seconds_between_checks)
+
+    def clear(self) -> None:
+        while True:
+            number_of_messages = int(
+                self.info()['ApproximateNumberOfMessages'])
+            messages = list(
+                self.get_messages(
+                    desired_number_of_messages=number_of_messages
+                )
+            )
+            self.mark_as_processed(messages)
+            if int(self.info()['ApproximateNumberOfMessages']) == 0:
+                break

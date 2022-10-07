@@ -325,7 +325,7 @@ def get_all_results():
     return search
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def opensearch_repository(opensearch_props, generic_mapping):
     from snoindex.repository.opensearch import Opensearch
     os = Opensearch(
@@ -338,3 +338,31 @@ def opensearch_repository(opensearch_props, generic_mapping):
     )
     yield os
     os.clear()
+
+
+@pytest.fixture
+def localstack_sqs_client():
+    import boto3
+    return boto3.client(
+        'sqs',
+        endpoint_url='http://localstack:4566',
+        aws_access_key_id='testing',
+        aws_secret_access_key='testing',
+        region_name='us-west-2',
+    )
+
+
+@pytest.fixture(scope='function')
+def queue_for_testing(localstack_sqs_client):
+    from snoindex.repository.queue.sqs import SQSQueue
+    from snoindex.repository.queue.sqs import SQSQueueProps
+    queue = SQSQueue(
+        props=SQSQueueProps(
+            client=localstack_sqs_client,
+            queue_url='http://localstack:4566/000000000000/queue-for-testing'
+        )
+    )
+    queue.wait_for_queue_to_exist()
+    queue.clear()
+    yield queue
+    queue.clear()
