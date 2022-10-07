@@ -366,3 +366,35 @@ def queue_for_testing(localstack_sqs_client):
     queue.clear()
     yield queue
     queue.clear()
+
+
+@pytest.fixture(scope='function')
+def transaction_queue(localstack_sqs_client):
+    from snoindex.repository.queue.sqs import SQSQueue
+    from snoindex.repository.queue.sqs import SQSQueueProps
+    queue = SQSQueue(
+        props=SQSQueueProps(
+            client=localstack_sqs_client,
+            queue_url='http://localstack:4566/000000000000/transaction-queue'
+        )
+    )
+    queue.wait_for_queue_to_exist()
+    queue.clear()
+    yield queue
+    queue.clear()
+
+
+@pytest.fixture(scope='function')
+def invalidation_queue(localstack_sqs_client):
+    from snoindex.repository.queue.sqs import SQSQueue
+    from snoindex.repository.queue.sqs import SQSQueueProps
+    queue = SQSQueue(
+        props=SQSQueueProps(
+            client=localstack_sqs_client,
+            queue_url='http://localstack:4566/000000000000/invalidation-queue'
+        )
+    )
+    queue.wait_for_queue_to_exist()
+    queue.clear()
+    yield queue
+    queue.clear()
