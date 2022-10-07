@@ -183,3 +183,32 @@ def raw_index_data_view():
         },
         'uuid': '4cead359-10e9-49a8-9d20-f05b2499b919'
     }
+
+
+@pytest.fixture
+def mocked_portal(portal_props, raw_index_data_view, mocker):
+    from snoindex.remote.portal import Portal
+    return_data = mocker.Mock()
+    return_data.json = lambda: raw_index_data_view
+    mocker.patch(
+        'snoindex.remote.portal.make_authorized_remote_request',
+        return_value=return_data
+    )
+    return Portal(
+        props=portal_props
+    )
+
+
+@pytest.fixture
+def opensearch_client():
+    from opensearchpy import OpenSearch
+    return OpenSearch()
+
+
+@pytest.fixture
+def opensearch_props(opensearch_client):
+    from snoindex.repository.opensearch import OpensearchProps
+    return OpensearchProps(
+        client=opensearch_client,
+        resources_index='someindex',
+    )
