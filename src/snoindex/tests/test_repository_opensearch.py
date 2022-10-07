@@ -105,13 +105,42 @@ def test_repository_opensearch_opensearch_index_item(opensearch_repository, mock
         assert hit['_version'] == 5
 
 
-def test_repository_opensearch_opensearch_bulk_index_items():
-    assert False
+@pytest.mark.integration
+def test_repository_opensearch_opensearch_bulk_index_items(opensearch_repository, mocked_portal, get_all_results):
+    item1 = mocked_portal.get_item('xyz123', 4)
+    item2 = mocked_portal.get_item('xyz345', 4)
+    opensearch_repository.bulk_index_items(
+        [
+            item1,
+            item2,
+        ]
+    )
+    opensearch_repository.refresh_resources_index()
+    results = list(get_all_results(
+        opensearch_repository.props.client)['hits']['hits'])
+    assert len(results) == 2
 
 
-def test_repository_opensearch_opensearch_referesh_resources_index():
-    assert False
+@pytest.mark.integration
+def test_repository_opensearch_opensearch_referesh_resources_index(opensearch_repository, mocked_portal, get_all_results):
+    item1 = mocked_portal.get_item('xyz123', 4)
+    item2 = mocked_portal.get_item('xyz345', 4)
+    opensearch_repository.bulk_index_items(
+        [
+            item1,
+            item2,
+        ]
+    )
+    results = list(get_all_results(
+        opensearch_repository.props.client)['hits']['hits'])
+    assert len(results) == 0
+    opensearch_repository.refresh_resources_index()
+    results = list(get_all_results(
+        opensearch_repository.props.client)['hits']['hits'])
+    assert len(results) == 2
 
 
-def test_repository_opensearch_opensearch_wait_for_resources_index_to_exist():
-    assert False
+@pytest.mark.integration
+def test_repository_opensearch_opensearch_wait_for_resources_index_to_exist(opensearch_repository):
+    opensearch_repository.wait_for_resources_index_to_exist()
+    assert True
