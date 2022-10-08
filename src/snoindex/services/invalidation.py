@@ -16,14 +16,6 @@ from typing import List
 from typing import cast
 
 
-@dataclass
-class InvalidationServiceProps:
-    transaction_queue: SQSQueue
-    invalidation_queue: SQSQueue
-    opensearch: Opensearch
-    messages_to_handle_per_run: int = 1
-
-
 def get_updated_uuids_from_transaction(message: InboundMessage) -> List[str]:
     return cast(
         List[str],
@@ -69,6 +61,14 @@ def make_outbound_message(message: InboundMessage, uuid: str) -> OutboundMessage
         body=body,
     )
     return outbound_message
+
+
+@dataclass
+class InvalidationServiceProps:
+    transaction_queue: SQSQueue
+    invalidation_queue: SQSQueue
+    opensearch: Opensearch
+    messages_to_handle_per_run: int = 1
 
 
 class InvalidationService:

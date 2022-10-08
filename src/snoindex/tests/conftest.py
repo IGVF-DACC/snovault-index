@@ -398,3 +398,49 @@ def invalidation_queue(localstack_sqs_client):
     queue.clear()
     yield queue
     queue.clear()
+
+
+@pytest.fixture
+def mock_transaction_message():
+    import json
+    from snoindex.domain.message import InboundMessage
+    message_body = {
+        'metadata': {
+            'xid': 1234,
+            'tid': 'abcd',
+        },
+        'data': {
+            'payload': {
+                'updated': [
+                    '09d05b87-4d30-4dfb-b243-3327005095f2',
+                ],
+                'renamed': [
+                    '09d05b87-4d30-4dfb-b243-3327005095f2',
+                ]
+            }
+        }
+    }
+    return InboundMessage(
+        message_id=message_body['metadata']['tid'],
+        receipt_handle='xyz',
+        md5_of_body='abc',
+        body=json.dumps(message_body),
+    )
+
+
+@pytest.fixture
+def invalidation_service_props(transaction_queue, invalidation_queue, opensearch_repository):
+    from snoindex.services.invalidation import InvalidationServiceProps
+    return InvalidationServiceProps(
+        transaction_queue=transaction_queue,
+        invalidation_queue=invalidation_queue,
+        opensearch=opensearch_repository
+    )
+
+
+@pytest.fixture
+def invalidation_service(invalidation_service_props):
+    from snoindex.services.invalidation import InvalidationService
+    return InvalidationService(
+        props=invalidation_service_props
+    )
