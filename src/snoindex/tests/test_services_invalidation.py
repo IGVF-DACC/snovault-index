@@ -31,7 +31,9 @@ def test_services_invalidation_make_outbound_message(mock_transaction_message):
     from snoindex.services.invalidation import make_outbound_message
     from snoindex.domain.message import OutboundMessage
     outbound_message = make_outbound_message(
-        mock_transaction_message, 'someuuid')
+        mock_transaction_message,
+        'someuuid'
+    )
     assert isinstance(outbound_message, OutboundMessage)
     assert outbound_message.unique_id == 'someuuid-1234'
     assert outbound_message.body == {
@@ -64,12 +66,14 @@ def test_services_invalidation_invalidation_service_init(
     assert isinstance(invalidation_service, InvalidationService)
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_invalidate_all_uuids_from_transaction(
         invalidation_service,
         mock_transaction_message
 ):
     invalidation_service.invalidate_all_uuids_from_transaction(
-        mock_transaction_message)
+        mock_transaction_message
+    )
     message = list(
         invalidation_service.props.invalidation_queue.get_messages(
             desired_number_of_messages=1
@@ -79,6 +83,7 @@ def test_services_invalidation_invalidation_service_invalidate_all_uuids_from_tr
     invalidation_service.props.invalidation_queue.clear()
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_invalidate_all_related_uuids(
         invalidation_service,
         mock_transaction_message,
@@ -96,33 +101,80 @@ def test_services_invalidation_invalidation_service_invalidate_all_related_uuids
     invalidation_service.props.invalidation_queue.clear()
 
 
-def test_services_invalidation_invalidation_service_handle_message():
-    assert False
+@pytest.mark.integration
+def test_services_invalidation_invalidation_service_handle_message(
+        invalidation_service,
+        mock_transaction_message,
+        mocked_portal,
+):
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    invalidation_service.props.opensearch.index_item(item)
+    invalidation_service.handle_message(mock_transaction_message)
+    messages = list(
+        invalidation_service.props.invalidation_queue.get_messages(
+            desired_number_of_messages=2
+        )
+    )
+    uuids = [
+        message.json_body['data']['uuid']
+        for message
+        in messages
+    ]
+    assert '09d05b87-4d30-4dfb-b243-3327005095f2' in uuids
+    assert '4cead359-10e9-49a8-9d20-f05b2499b919' in uuids
+    assert len(invalidation_service.tracker.handled_messages) == 1
+    assert invalidation_service.tracker.stats()['handled'] == 1
+    invalidation_service.props.invalidation_queue.clear()
 
 
-def test_services_invalidation_invalidation_service_try_to_handle_message():
-    assert False
+@pytest.mark.integration
+def test_services_invalidation_invalidation_service_try_to_handle_message(
+        invalidation_service,
+        mock_transaction_message,
+        mocked_portal,
+        mocker,
+):
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    invalidation_service.props.opensearch.index_item(item)
+
+    def raise_error(*args, **kwargs):
+        raise Exception('something went wrong')
+    mocker.patch(
+        'snoindex.services.invalidation.InvalidationService.handle_message',
+        raise_error,
+    )
+    invalidation_service.tracker.add_new_messages([mock_transaction_message])
+    invalidation_service.try_to_handle_messages()
+    assert len(invalidation_service.tracker.handled_messages) == 0
+    assert len(invalidation_service.tracker.failed_messages) == 1
+    invalidation_service.props.invalidation_queue.clear()
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_mark_handled_messages_as_processed():
     assert False
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_get_new_messages_from_queue():
     assert False
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_log_stats():
     assert False
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_clear():
     assert False
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_run_once():
     assert False
 
 
+@pytest.mark.integration
 def test_services_invalidation_invalidation_service_poll():
     assert False
