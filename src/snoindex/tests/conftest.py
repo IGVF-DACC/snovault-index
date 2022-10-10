@@ -201,8 +201,9 @@ def mocked_portal(portal_props, raw_index_data_view, mocker):
 
 @pytest.fixture
 def opensearch_client(url='http://opensearch:9200'):
+    from urllib3.util import Retry
     from opensearchpy import OpenSearch
-    return OpenSearch(url)
+    return OpenSearch(url, timeout=30, retries=Retry(3))
 
 
 @pytest.fixture
