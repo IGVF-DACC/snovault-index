@@ -408,6 +408,22 @@ def invalidation_queue(localstack_sqs_client):
     queue.clear()
 
 
+@pytest.fixture(scope='function')
+def bulk_invalidation_queue(localstack_sqs_client):
+    from snoindex.repository.queue.sqs import SQSQueue
+    from snoindex.repository.queue.sqs import SQSQueueProps
+    queue = SQSQueue(
+        props=SQSQueueProps(
+            client=localstack_sqs_client,
+            queue_url='http://localstack:4566/000000000000/bulk-invalidation-queue'
+        )
+    )
+    queue.wait_for_queue_to_exist()
+    queue.clear()
+    yield queue
+    queue.clear()
+
+
 @pytest.fixture
 def mock_transaction_message():
     import json
@@ -519,7 +535,7 @@ def mock_invalidation_message_outbound():
 
 
 @pytest.fixture(scope='function')
-def indexing_service_props(transaction_queue, invalidation_queue, opensearch_repository, mocked_portal):
+def indexing_service_props(invalidation_queue, opensearch_repository, mocked_portal):
     from snoindex.services.indexing import IndexingServiceProps
     return IndexingServiceProps(
         invalidation_queue=invalidation_queue,
@@ -533,4 +549,22 @@ def indexing_service(indexing_service_props):
     from snoindex.services.indexing import IndexingService
     return IndexingService(
         props=indexing_service_props
+    )
+
+
+@pytest.fixture(scope='function')
+def bulk_indexing_service_props(bulk_invalidation_queue, opensearch_repository, mocked_portal):
+    from snoindex.services.indexing import BulkIndexingServiceProps
+    return BulkIndexingServiceProps(
+        bulk_invalidation_queue=bulk_invalidation_queue,
+        portal=mocked_portal,
+        opensearch=opensearch_repository,
+    )
+
+
+@pytest.fixture(scope='function')
+def bulk_indexing_service(bulk_indexing_service_props):
+    from snoindex.services.indexing import BulkIndexingService
+    return BulkIndexingService(
+        props=bulk_indexing_service_props
     )

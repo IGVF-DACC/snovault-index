@@ -181,3 +181,51 @@ def test_services_indexing_indexing_service_run_once(
         ]
     ) == 0
     indexing_service.props.invalidation_queue.clear()
+
+
+@pytest.mark.integration
+def test_services_indexing_bulk_indexing_service_init(
+        bulk_indexing_service_props,
+):
+    from snoindex.services.indexing import BulkIndexingService
+    bulk_indexing_service = BulkIndexingService(
+        props=bulk_indexing_service_props
+    )
+    assert isinstance(bulk_indexing_service, BulkIndexingService)
+
+
+@pytest.mark.integration
+def test_services_indexing_bulk_indexing_service_run_once(
+        bulk_indexing_service,
+        mock_invalidation_message_outbound,
+        get_all_results,
+):
+    bulk_indexing_service.props.bulk_invalidation_queue.send_messages(
+        [
+            mock_invalidation_message_outbound,
+        ]
+    )
+    bulk_indexing_service.run_once()
+    assert len(bulk_indexing_service.tracker.new_messages) == 0
+    assert len(bulk_indexing_service.tracker.failed_messages) == 0
+    assert len(bulk_indexing_service.tracker.handled_messages) == 0
+    assert bulk_indexing_service.tracker.stats()['all'] == 1
+    assert bulk_indexing_service.tracker.stats()['handled'] == 1
+    assert bulk_indexing_service.tracker.stats()['failed'] == 0
+    bulk_indexing_service.props.opensearch.refresh_resources_index()
+    results = list(
+        get_all_results(
+            bulk_indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
+    bulk_indexing_service.props.bulk_invalidation_queue.wait_for_queue_to_drain(
+        number_of_checks=1,
+        seconds_between_checks=1,
+    )
+    assert int(
+        bulk_indexing_service.props.bulk_invalidation_queue.info()[
+            'ApproximateNumberOfMessages'
+        ]
+    ) == 0
+    bulk_indexing_service.props.bulk_invalidation_queue.clear()
