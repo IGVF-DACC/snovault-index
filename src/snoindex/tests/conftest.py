@@ -469,3 +469,24 @@ def invalidation_service(invalidation_service_props):
     return InvalidationService(
         props=invalidation_service_props
     )
+
+
+@pytest.fixture
+def mock_invalidation_message():
+    import json
+    from snoindex.domain.message import InboundMessage
+    message_body = {
+        'metadata': {
+            'xid': 1234,
+            'tid': 'abcd',
+        },
+        'data': {
+            'uuid': '09d05b87-4d30-4dfb-b243-3327005095f2'
+        }
+    }
+    return InboundMessage(
+        message_id=message_body['metadata']['tid'],
+        receipt_handle='xyz',
+        md5_of_body='abc',
+        body=json.dumps(message_body),
+    )
