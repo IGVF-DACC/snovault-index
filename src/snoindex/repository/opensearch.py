@@ -116,11 +116,14 @@ class Opensearch:
             attempt = 0
             while True:
                 attempt += 1
-                if self.props.client.indices.exists(self.props.resources_index):
-                    logging.warning(
-                        f'Found resources index, attempt {attempt}'
-                    )
-                    break
+                try:
+                    if self.props.client.indices.exists(self.props.resources_index):
+                        logging.warning(
+                            f'Found resources index, attempt {attempt}'
+                        )
+                        break
+                except Exception as e:
+                    logging.warning(e)
             time.sleep(attempt * 5)
 
     def clear(self) -> None:
