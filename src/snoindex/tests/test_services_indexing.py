@@ -92,7 +92,6 @@ def test_services_indexing_indexing_service_try_to_handle_messages(
 def test_services_indexing_indexing_service_get_new_messages_from_queue(
         indexing_service,
         mock_invalidation_message_outbound,
-        get_all_results,
 ):
     indexing_service.props.invalidation_queue.send_messages(
         [
@@ -131,10 +130,27 @@ def test_services_indexing_indexing_service_get_new_messages_from_queue(
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_clear():
-    assert False
-
-
-@pytest.mark.integration
-def test_services_indexing_indexing_service_run_once():
-    assert False
+def test_services_indexing_indexing_service_run_once(
+        indexing_service,
+        mock_invalidation_message_outbound,
+        get_all_results,
+):
+    indexing_service.props.invalidation_queue.send_messages(
+        [
+            mock_invalidation_message_outbound,
+        ]
+    )
+    indexing_service.run_once()
+    assert len(indexing_service.tracker.new_messages) == 0
+    assert len(indexing_service.tracker.failed_messages) == 0
+    assert len(indexing_service.tracker.handled_messages) == 0
+    assert indexing_service.tracker.stats()['all'] == 1
+    assert indexing_service.tracker.stats()['handled'] == 1
+    assert indexing_service.tracker.stats()['failed'] == 0
+    indexing_service.props.opensearch.refresh_resources_index()
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
