@@ -328,11 +328,18 @@ def get_all_results():
 
 @pytest.fixture(scope='function')
 def opensearch_repository(opensearch_props, generic_mapping):
+    import time
     from snoindex.repository.opensearch import Opensearch
     os = Opensearch(
         props=opensearch_props
     )
-    os.clear()
+    while True:
+        try:
+            os.clear()
+            break
+        except Exception as e:
+            print(e)
+            time.sleep(5)
     os.props.client.indices.create(
         index=os.props.resources_index,
         body=generic_mapping
