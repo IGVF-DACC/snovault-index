@@ -490,3 +490,21 @@ def mock_invalidation_message():
         md5_of_body='abc',
         body=json.dumps(message_body),
     )
+
+
+@pytest.fixture
+def indexing_service_props(transaction_queue, invalidation_queue, opensearch_repository, mocked_portal):
+    from snoindex.services.indexing import IndexingServiceProps
+    return IndexingServiceProps(
+        invalidation_queue=invalidation_queue,
+        portal=mocked_portal,
+        opensearch=opensearch_repository,
+    )
+
+
+@pytest.fixture
+def indexing_service(indexing_service_props):
+    from snoindex.services.indexing import IndexingService
+    return IndexingService(
+        props=indexing_service_props
+    )

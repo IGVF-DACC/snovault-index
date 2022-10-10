@@ -116,8 +116,11 @@ def test_repository_opensearch_opensearch_bulk_index_items(opensearch_repository
         ]
     )
     opensearch_repository.refresh_resources_index()
-    results = list(get_all_results(
-        opensearch_repository.props.client)['hits']['hits'])
+    results = list(
+        get_all_results(
+            opensearch_repository.props.client
+        )['hits']['hits']
+    )
     assert len(results) == 2
 
 

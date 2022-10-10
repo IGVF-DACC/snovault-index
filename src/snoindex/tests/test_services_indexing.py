@@ -12,18 +12,80 @@ def test_services_indexing_get_uuid_and_version_from_message(
     assert actual == expected
 
 
-def test_services_indexing_indexing_service_init():
-    assert False
+@pytest.mark.integration
+def test_services_indexing_indexing_service_init(
+        indexing_service_props,
+):
+    from snoindex.services.indexing import IndexingService
+    indexing_service = IndexingService(
+        props=indexing_service_props
+    )
+    assert isinstance(indexing_service, IndexingService)
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_handle_message():
-    assert False
+def test_services_indexing_indexing_service_handle_message(
+        indexing_service,
+        mock_invalidation_message,
+        get_all_results,
+):
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 0
+    indexing_service.handle_message(
+        mock_invalidation_message,
+    )
+    indexing_service.props.opensearch.refresh_resources_index()
+    assert len(indexing_service.tracker.handled_messages) == 1
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
+
+
+def raise_error(*args, **kwargs):
+    raise Exception('something went wrong')
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_try_to_handle_messages():
-    assert False
+def test_services_indexing_indexing_service_try_to_handle_messages(
+        indexing_service,
+        mock_invalidation_message,
+        get_all_results,
+        mocker,
+):
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 0
+    indexing_service.tracker.add_new_messages(
+        [
+            mock_invalidation_message
+        ]
+    )
+    indexing_service.try_to_handle_messages()
+    indexing_service.props.opensearch.refresh_resources_index()
+    assert len(indexing_service.tracker.handled_messages) == 1
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
+    assert indexing_service.tracker.number_failed_messages == 0
+    mocker.patch(
+        'snoindex.services.indexing.IndexingService.handle_message',
+        raise_error,
+    )
+    indexing_service.try_to_handle_messages()
+    assert indexing_service.tracker.number_failed_messages == 1
 
 
 @pytest.mark.integration
