@@ -242,20 +242,36 @@ def test_services_invalidation_invalidation_service_get_new_messages_from_queue(
 
 
 @pytest.mark.integration
-def test_services_invalidation_invalidation_service_log_stats():
-    assert False
-
-
-@pytest.mark.integration
-def test_services_invalidation_invalidation_service_clear():
-    assert False
-
-
-@pytest.mark.integration
-def test_services_invalidation_invalidation_service_run_once():
-    assert False
-
-
-@pytest.mark.integration
-def test_services_invalidation_invalidation_service_poll():
-    assert False
+def test_services_invalidation_invalidation_service_run_once(
+        invalidation_service,
+        mock_transaction_message_outbound,
+        mocked_portal,
+):
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    invalidation_service.props.opensearch.index_item(item)
+    invalidation_service.props.transaction_queue.send_messages(
+        [
+            mock_transaction_message_outbound
+        ]
+    )
+    invalidation_service.run_once()
+    messages = list(
+        invalidation_service.props.invalidation_queue.get_messages(
+            desired_number_of_messages=2
+        )
+    )
+    uuids = [
+        message.json_body['data']['uuid']
+        for message
+        in messages
+    ]
+    assert '09d05b87-4d30-4dfb-b243-3327005095f2' in uuids
+    assert '4cead359-10e9-49a8-9d20-f05b2499b919' in uuids
+    assert len(invalidation_service.tracker.new_messages) == 0
+    assert len(invalidation_service.tracker.failed_messages) == 0
+    assert len(invalidation_service.tracker.handled_messages) == 0
+    assert invalidation_service.tracker.stats()['all'] == 1
+    assert invalidation_service.tracker.stats()['handled'] == 1
+    assert invalidation_service.tracker.stats()['failed'] == 0
+    invalidation_service.props.transaction_queue.clear()
+    invalidation_service.props.invalidation_queue.clear()
