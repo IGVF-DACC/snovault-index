@@ -58,7 +58,7 @@ def test_services_invalidation_invalidation_service_init(
     props = InvalidationServiceProps(
         transaction_queue=transaction_queue,
         invalidation_queue=invalidation_queue,
-        opensearch=opensearch_repository
+        opensearch=opensearch_repository,
     )
     invalidation_service = InvalidationService(
         props=props

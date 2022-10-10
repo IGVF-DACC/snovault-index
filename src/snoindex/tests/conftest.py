@@ -454,7 +454,7 @@ def mock_transaction_message_outbound():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def invalidation_service_props(transaction_queue, invalidation_queue, opensearch_repository):
     from snoindex.services.invalidation import InvalidationServiceProps
     return InvalidationServiceProps(
@@ -464,7 +464,7 @@ def invalidation_service_props(transaction_queue, invalidation_queue, opensearch
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def invalidation_service(invalidation_service_props):
     from snoindex.services.invalidation import InvalidationService
     return InvalidationService(
@@ -493,7 +493,7 @@ def mock_invalidation_message():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def mock_invalidation_message_outbound():
     from snoindex.domain.message import OutboundMessage
     message_body = {
@@ -511,7 +511,7 @@ def mock_invalidation_message_outbound():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def indexing_service_props(transaction_queue, invalidation_queue, opensearch_repository, mocked_portal):
     from snoindex.services.indexing import IndexingServiceProps
     return IndexingServiceProps(
@@ -521,7 +521,7 @@ def indexing_service_props(transaction_queue, invalidation_queue, opensearch_rep
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def indexing_service(indexing_service_props):
     from snoindex.services.indexing import IndexingService
     return IndexingService(

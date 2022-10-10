@@ -47,6 +47,7 @@ class IndexingService:
             try:
                 self.handle_message(message)
             except Exception as e:
+                print('ERROR HANDLING!')
                 logging.error(e)
                 self.tracker.add_failed_messages(
                     [

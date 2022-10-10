@@ -109,7 +109,7 @@ class SQSQueue:
     def info(self) -> Any:
         return self.props.client.get_queue_attributes(
             QueueUrl=self.props.queue_url,
-            AttributeNames=['All']
+            AttributeNames=['All'],
         )['Attributes']
 
     def wait_for_queue_to_exist(self) -> None:
@@ -128,8 +128,7 @@ class SQSQueue:
     def _queue_has_zero_messages(self) -> bool:
         info = self.info()
         conditions = [
-            info['ApproximateNumberOfMessages'] == '0',
-            info['ApproximateNumberOfMessagesNotVisible'] == '0',
+            int(info['ApproximateNumberOfMessages']) == 0,
         ]
         return all(conditions)
 
@@ -150,13 +149,15 @@ class SQSQueue:
 
     def clear(self) -> None:
         while True:
+            if self._queue_has_zero_messages():
+                break
             number_of_messages = int(
-                self.info()['ApproximateNumberOfMessages'])
+                self.info()['ApproximateNumberOfMessages']
+            )
             messages = list(
                 self.get_messages(
                     desired_number_of_messages=number_of_messages
                 )
             )
-            self.mark_as_processed(messages)
-            if int(self.info()['ApproximateNumberOfMessages']) == 0:
-                break
+            if messages:
+                self.mark_as_processed(messages)
