@@ -53,7 +53,7 @@ def raise_error(*args, **kwargs):
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_try_to_handle_messages(
+def test_services_indexing_indexing_service_try_to_handle_messages_error(
         indexing_service,
         mock_invalidation_message,
         get_all_results,
@@ -111,7 +111,7 @@ def test_services_indexing_indexing_service_get_new_messages_from_queue(
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_try_to_handle_messages(
+def test_services_indexing_indexing_service_try_to_handle_messages_okay(
         indexing_service,
         mock_invalidation_message_outbound,
 ):
@@ -192,6 +192,42 @@ def test_services_indexing_bulk_indexing_service_init(
         props=bulk_indexing_service_props
     )
     assert isinstance(bulk_indexing_service, BulkIndexingService)
+
+
+@pytest.mark.integration
+def test_services_indexing_bulk_indexing_service_try_to_handle_messages_error(
+        bulk_indexing_service,
+        mock_invalidation_message,
+        get_all_results,
+        mocker,
+):
+    results = list(
+        get_all_results(
+            bulk_indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 0
+    bulk_indexing_service.tracker.add_new_messages(
+        [
+            mock_invalidation_message
+        ]
+    )
+    bulk_indexing_service.try_to_handle_messages()
+    bulk_indexing_service.props.opensearch.refresh_resources_index()
+    assert len(bulk_indexing_service.tracker.handled_messages) == 1
+    results = list(
+        get_all_results(
+            bulk_indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
+    assert bulk_indexing_service.tracker.number_failed_messages == 0
+    mocker.patch(
+        'snoindex.services.indexing.BulkIndexingService.handle_messages',
+        raise_error,
+    )
+    bulk_indexing_service.try_to_handle_messages()
+    assert bulk_indexing_service.tracker.number_failed_messages == 1
 
 
 @pytest.mark.integration
