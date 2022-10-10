@@ -229,3 +229,30 @@ def test_services_indexing_bulk_indexing_service_run_once(
         ]
     ) == 0
     bulk_indexing_service.props.bulk_invalidation_queue.clear()
+
+
+@pytest.mark.integration
+def test_services_run_invalidation_and_indexing_services_together(
+        invalidation_service,
+        indexing_service,
+        get_all_results,
+        mock_transaction_message_outbound,
+        mocked_portal,
+):
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    invalidation_service.props.opensearch.index_item(item)
+    invalidation_service.props.transaction_queue.send_messages(
+        [
+            mock_transaction_message_outbound
+        ]
+    )
+    invalidation_service.run_once()
+    indexing_service.run_once()
+    results = list(
+        get_all_results(
+            indexing_service.props.opensearch.props.client
+        )['hits']['hits']
+    )
+    assert len(results) == 1
+    invalidation_service.props.transaction_queue.clear()
+    indexing_service.props.invalidation_queue.clear()
