@@ -429,6 +429,31 @@ def mock_transaction_message():
 
 
 @pytest.fixture
+def mock_transaction_message_outbound():
+    from snoindex.domain.message import OutboundMessage
+    message_body = {
+        'metadata': {
+            'xid': 1234,
+            'tid': 'abcd',
+        },
+        'data': {
+            'payload': {
+                'updated': [
+                    '09d05b87-4d30-4dfb-b243-3327005095f2',
+                ],
+                'renamed': [
+                    '09d05b87-4d30-4dfb-b243-3327005095f2',
+                ]
+            }
+        }
+    }
+    return OutboundMessage(
+        unique_id=message_body['metadata']['tid'],
+        body=message_body,
+    )
+
+
+@pytest.fixture
 def invalidation_service_props(transaction_queue, invalidation_queue, opensearch_repository):
     from snoindex.services.invalidation import InvalidationServiceProps
     return InvalidationServiceProps(

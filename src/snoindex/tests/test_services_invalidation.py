@@ -127,6 +127,10 @@ def test_services_invalidation_invalidation_service_handle_message(
     invalidation_service.props.invalidation_queue.clear()
 
 
+def raise_error(*args, **kwargs):
+    raise Exception('something went wrong')
+
+
 @pytest.mark.integration
 def test_services_invalidation_invalidation_service_try_to_handle_message(
         invalidation_service,
@@ -136,9 +140,6 @@ def test_services_invalidation_invalidation_service_try_to_handle_message(
 ):
     item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
     invalidation_service.props.opensearch.index_item(item)
-
-    def raise_error(*args, **kwargs):
-        raise Exception('something went wrong')
     mocker.patch(
         'snoindex.services.invalidation.InvalidationService.handle_message',
         raise_error,
@@ -151,8 +152,53 @@ def test_services_invalidation_invalidation_service_try_to_handle_message(
 
 
 @pytest.mark.integration
-def test_services_invalidation_invalidation_service_mark_handled_messages_as_processed():
-    assert False
+def test_services_invalidation_invalidation_service_mark_handled_messages_as_processed(
+        invalidation_service,
+        mock_transaction_message_outbound,
+        mocked_portal,
+        mocker,
+):
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    invalidation_service.props.opensearch.index_item(item)
+    invalidation_service.props.transaction_queue.send_messages(
+        [
+            mock_transaction_message_outbound
+        ]
+    )
+    assert int(
+        invalidation_service.props.transaction_queue.info()[
+            'ApproximateNumberOfMessages']
+    ) == 1
+    invalidation_service.get_new_messages_from_queue()
+    invalidation_service.try_to_handle_messages()
+    messages = list(
+        invalidation_service.props.invalidation_queue.get_messages(
+            desired_number_of_messages=2
+        )
+    )
+    uuids = [
+        message.json_body['data']['uuid']
+        for message
+        in messages
+    ]
+    assert '09d05b87-4d30-4dfb-b243-3327005095f2' in uuids
+    assert '4cead359-10e9-49a8-9d20-f05b2499b919' in uuids
+    assert len(invalidation_service.tracker.new_messages) == 1
+    assert len(invalidation_service.tracker.handled_messages) == 1
+    assert invalidation_service.tracker.stats()['handled'] == 1
+    assert invalidation_service.tracker.stats()['all'] == 1
+    assert invalidation_service.tracker.stats()['failed'] == 0
+    invalidation_service.mark_handled_messages_as_processed()
+    assert int(
+        invalidation_service.props.transaction_queue.info()[
+            'ApproximateNumberOfMessages']
+    ) == 0
+    assert int(
+        invalidation_service.props.transaction_queue.info(
+        )['ApproximateNumberOfMessagesNotVisible']
+    ) == 0
+    invalidation_service.props.transaction_queue.clear()
+    invalidation_service.props.invalidation_queue.clear()
 
 
 @pytest.mark.integration
