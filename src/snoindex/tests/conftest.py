@@ -493,6 +493,24 @@ def mock_invalidation_message():
 
 
 @pytest.fixture
+def mock_invalidation_message_outbound():
+    from snoindex.domain.message import OutboundMessage
+    message_body = {
+        'metadata': {
+            'xid': 1234,
+            'tid': 'abcd',
+        },
+        'data': {
+            'uuid': '09d05b87-4d30-4dfb-b243-3327005095f2'
+        }
+    }
+    return OutboundMessage(
+        unique_id=message_body['metadata']['tid'],
+        body=message_body,
+    )
+
+
+@pytest.fixture
 def indexing_service_props(transaction_queue, invalidation_queue, opensearch_repository, mocked_portal):
     from snoindex.services.indexing import IndexingServiceProps
     return IndexingServiceProps(

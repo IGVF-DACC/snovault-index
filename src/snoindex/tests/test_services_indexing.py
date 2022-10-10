@@ -89,13 +89,45 @@ def test_services_indexing_indexing_service_try_to_handle_messages(
 
 
 @pytest.mark.integration
-def test_services_indexing_indexing_service_mark_handled_messages_as_processed():
-    assert False
-
-
-@pytest.mark.integration
-def test_services_indexing_indexing_service_get_new_messages_from_queue():
-    assert False
+def test_services_indexing_indexing_service_get_new_messages_from_queue(
+        indexing_service,
+        mock_invalidation_message_outbound,
+        get_all_results,
+):
+    indexing_service.props.invalidation_queue.send_messages(
+        [
+            mock_invalidation_message_outbound,
+        ]
+    )
+    assert int(
+        indexing_service.props.invalidation_queue.info()[
+            'ApproximateNumberOfMessages'
+        ]
+    ) == 1
+    indexing_service.get_new_messages_from_queue()
+    assert indexing_service.tracker.number_all_messages == 1
+    assert indexing_service.tracker.number_handled_messages == 0
+    assert indexing_service.tracker.number_failed_messages == 0
+    indexing_service.try_to_handle_messages()
+    assert indexing_service.tracker.number_handled_messages == 1
+    assert indexing_service.tracker.number_failed_messages == 0
+    assert len(indexing_service.tracker.handled_messages) == 1
+    indexing_service.mark_handled_messages_as_processed()
+    indexing_service.props.invalidation_queue.wait_for_queue_to_drain(
+        number_of_checks=1,
+        seconds_between_checks=1,
+    )
+    assert int(
+        indexing_service.props.invalidation_queue.info()[
+            'ApproximateNumberOfMessages'
+        ]
+    ) == 0
+    assert int(
+        indexing_service.props.invalidation_queue.info()[
+            'ApproximateNumberOfMessagesNotVisible'
+        ]
+    ) == 0
+    indexing_service.props.invalidation_queue.clear()
 
 
 @pytest.mark.integration
