@@ -156,7 +156,6 @@ def test_services_invalidation_invalidation_service_mark_handled_messages_as_pro
         invalidation_service,
         mock_transaction_message_outbound,
         mocked_portal,
-        mocker,
 ):
     item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
     invalidation_service.props.opensearch.index_item(item)
@@ -191,19 +190,55 @@ def test_services_invalidation_invalidation_service_mark_handled_messages_as_pro
     invalidation_service.mark_handled_messages_as_processed()
     assert int(
         invalidation_service.props.transaction_queue.info()[
-            'ApproximateNumberOfMessages']
+            'ApproximateNumberOfMessages'
+        ]
     ) == 0
     assert int(
-        invalidation_service.props.transaction_queue.info(
-        )['ApproximateNumberOfMessagesNotVisible']
+        invalidation_service.props.transaction_queue.info()[
+            'ApproximateNumberOfMessagesNotVisible'
+        ]
     ) == 0
     invalidation_service.props.transaction_queue.clear()
     invalidation_service.props.invalidation_queue.clear()
 
 
 @pytest.mark.integration
-def test_services_invalidation_invalidation_service_get_new_messages_from_queue():
-    assert False
+def test_services_invalidation_invalidation_service_get_new_messages_from_queue(
+        invalidation_service,
+):
+    from snoindex.domain.message import OutboundMessage
+    messages = []
+    for i in range(10):
+        message_body = {
+            'metadata': {
+                'xid': int(f'1234{i}'),
+                'tid': f'abcd{i}',
+            },
+            'data': {
+                'payload': {
+                    'updated': [
+                        '09d05b87-4d30-4dfb-b243-3327005095f2',
+                    ],
+                    'renamed': [
+                        '09d05b87-4d30-4dfb-b243-3327005095f2',
+                    ]
+                }
+            }
+        }
+        messages.append(
+            OutboundMessage(
+                unique_id=message_body['metadata']['tid'],
+                body=message_body,
+            )
+        )
+    invalidation_service.props.transaction_queue.send_messages(messages)
+    for i in range(10):
+        invalidation_service.get_new_messages_from_queue()
+    assert invalidation_service.tracker.number_all_messages == 10
+    invalidation_service.props.transaction_queue.mark_as_processed(
+        invalidation_service.tracker.new_messages
+    )
+    invalidation_service.props.transaction_queue.clear()
 
 
 @pytest.mark.integration
