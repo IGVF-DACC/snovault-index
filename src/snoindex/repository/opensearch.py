@@ -123,7 +123,8 @@ class Opensearch:
                         )
                         break
                 except Exception as e:
-                    time.sleep(attempt * 5)
+                    logging.warning(e)
+                time.sleep(attempt * 5)
 
     def clear(self) -> None:
         for index in self.props.client.indices.get('*'):
