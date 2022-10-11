@@ -115,15 +115,15 @@ class SQSQueue:
     def wait_for_queue_to_exist(self) -> None:
         logging.warning(f'Connecting to queue: {self.props.queue_url}')
         caught = None
-        for attempt in range(1, 4):
+        attempt = 0
+        while True:
+            attempt += 1
             try:
                 self.info()
                 break
-            except self.props.client.exceptions.QueueDoesNotExist as error:
-                time.sleep(attempt * 3)
-                caught = error
-                continue
-            raise caught
+            except self.props.client.exceptions.QueueDoesNotExist as e:
+                logging.warning(e)
+            time.sleep(attempt * 3)
 
     def _queue_has_zero_messages(self) -> bool:
         info = self.info()
