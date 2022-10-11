@@ -15,20 +15,27 @@ def test_config_get_opensearch_client():
     assert isinstance(client, OpenSearch)
 
 
-@pytest.mark.integration
-def test_config_invalidation_service_config():
+def test_config_invalidation_service_config(opensearch_client):
     from snoindex.config import InvalidationServiceConfig
-    assert False
+    from snoindex.config import get_sqs_client
+    config = InvalidationServiceConfig(
+        transaction_queue_url='some-queue-url',
+        invalidation_queue_url='another-queue-url',
+        opensearch_client=opensearch_client,
+        opensearch_resources_index='some-index',
+        sqs_client=get_sqs_client('http://localstackendpoint:4566'),
+    )
+    assert isinstance(config, InvalidationServiceConfig)
+    assert config.transaction_queue_url == 'some-queue-url'
 
 
-@pytest.mark.integration
-def test_config_indexing_service_config(invalidation_queue, opensearch_client):
+def test_config_indexing_service_config(opensearch_client):
     from snoindex.config import IndexingServiceConfig
     from snoindex.config import get_sqs_client
     config = IndexingServiceConfig(
         backend_url='some-url',
         auth=('some', 'auth'),
-        invalidation_queue=invalidation_queue,
+        invalidation_queue_url='some-queue-url',
         opensearch_client=opensearch_client,
         opensearch_resources_index='some-index',
         sqs_client=get_sqs_client('http://localstackendpoint:4566')
