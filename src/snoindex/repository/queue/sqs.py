@@ -122,8 +122,7 @@ class SQSQueue:
                 self.info()
                 break
             except self.props.client.exceptions.QueueDoesNotExist as e:
-                logging.warning(e)
-            time.sleep(attempt * 3)
+                time.sleep(attempt * 3)
 
     def _queue_has_zero_messages(self) -> bool:
         info = self.info()

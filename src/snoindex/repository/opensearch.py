@@ -123,7 +123,6 @@ class Opensearch:
                         )
                         break
                 except Exception as e:
-                    logging.warning(e)
                     time.sleep(attempt * 5)
 
     def clear(self) -> None:
