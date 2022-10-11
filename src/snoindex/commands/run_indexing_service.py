@@ -64,9 +64,9 @@ def make_invalidation_queue_from_config(config: IndexingServiceConfig) -> SQSQue
 
 def wait(indexing_service: IndexingService) -> None:
     indexing_service.props.invalidation_queue.wait_for_queue_to_exist()
+    indexing_service.props.opensearch.wait_for_resources_index_to_exist()
     indexing_service.props.portal.wait_for_portal_connection()
     indexing_service.props.portal.wait_for_access_key_to_exist()
-    indexing_service.props.opensearch.wait_for_resources_index_to_exist()
 
 
 def make_indexing_service_from_config(config: IndexingServiceConfig) -> IndexingService:
