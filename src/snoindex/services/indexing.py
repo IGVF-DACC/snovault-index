@@ -68,8 +68,14 @@ class IndexingService:
             )
         )
 
+    def _should_log_stats(self) -> bool:
+        return (
+            self.tracker.number_all_messages != 0
+            and self.tracker.number_all_messages % 100 == 0
+        )
+
     def log_stats(self) -> None:
-        if self.tracker.number_all_messages % 100 == 0:
+        if self._should_log_stats():
             logging.warning(
                 f'{self.__class__.__name__}: {self.tracker.stats()}'
             )
@@ -147,8 +153,14 @@ class BulkIndexingService:
             )
         )
 
+    def _should_log_stats(self) -> bool:
+        return (
+            self.tracker.number_all_messages != 0
+            and self.tracker.number_all_messages % 100 == 0
+        )
+
     def log_stats(self) -> None:
-        if self.tracker.number_all_messages % 100 == 0:
+        if self._should_log_stats():
             logging.warning(
                 f'{self.__class__.__name__}: {self.tracker.stats()}'
             )
