@@ -107,7 +107,7 @@ class Opensearch:
                     }
                 }
             },
-            conflict='proceed',
+            conflicts='proceed',
         )
 
     def bulk_index_items(self, items: List[Item]) -> None:
