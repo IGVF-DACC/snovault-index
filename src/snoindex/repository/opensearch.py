@@ -95,6 +95,20 @@ class Opensearch:
         except ConflictError as e:
             logging.warning(f'Skipping: {e}')
 
+    def delete_by_item(self, item: Item) -> None:
+        self.props.client.delete_by_query(
+            index=item.data['item_type'],
+            body={
+                'query': {
+                    'ids': {
+                        'values': [
+                            item.uuid,
+                        ]
+                    }
+                }
+            }
+        )
+
     def bulk_index_items(self, items: List[Item]) -> None:
         helpers.bulk(
             self.props.client,

@@ -39,6 +39,7 @@ class IndexingService:
     def handle_message(self, message: InboundMessage) -> None:
         uuid, version = get_uuid_and_version_from_message(message)
         item = self.props.portal.get_item(uuid, version)
+        self.props.opensearch.delete_by_item(item)
         self.props.opensearch.index_item(item)
         self.tracker.add_handled_messages([message])
 
