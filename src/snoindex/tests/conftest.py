@@ -33,7 +33,7 @@ def portal_props():
 
 
 @pytest.fixture
-def raw_index_data_view():
+def raw_index_data_view(index_name_with_hash):
     return {
         'audit': {},
         'embedded': {
@@ -110,7 +110,7 @@ def raw_index_data_view():
             'b0b9c607-f8b4-4f02-93f4-9895b461334b'
         ],
         'item_type': 'snowball',
-        'index_name': 'snowball_abcv1',
+        'index_name': index_name_with_hash,
         'linked_uuids': [
             '09d05b87-4d30-4dfb-b243-3327005095f2',
             '0abbd494-b852-433c-b360-93996f679dae',
@@ -187,6 +187,21 @@ def raw_index_data_view():
 
 
 @pytest.fixture
+def index_name_with_hash():
+    return 'snowball_abcv1'
+
+
+@pytest.fixture
+def alias_for_index_name():
+    return 'snowball'
+
+
+@pytest.fixture
+def alias_for_all_resource_indices():
+    return 'snowball-resources'
+
+
+@pytest.fixture
 def mocked_portal(portal_props, raw_index_data_view, mocker):
     from snoindex.remote.portal import Portal
     return_data = mocker.Mock()
@@ -208,19 +223,20 @@ def opensearch_client(url='http://opensearch:9200'):
 
 
 @pytest.fixture
-def opensearch_props(opensearch_client):
+def opensearch_props(opensearch_client, alias_for_all_resource_indices):
     from snoindex.repository.opensearch import OpensearchProps
     return OpensearchProps(
         client=opensearch_client,
-        resources_index='snowball',
+        resources_index=alias_for_all_resource_indices
     )
 
 
 @pytest.fixture
-def generic_mapping():
+def generic_mapping(alias_for_index_name, alias_for_all_resource_indices):
     return {
         'aliases': {
-            'snowball': {},
+            alias_for_index_name: {},
+            alias_for_all_resource_indices: {},
         },
         'mappings': {
             'dynamic_templates': [
@@ -334,7 +350,7 @@ def get_all_results():
 
 
 @pytest.fixture(scope='function')
-def opensearch_repository(opensearch_props, generic_mapping):
+def opensearch_repository(opensearch_props, generic_mapping, index_name_with_hash):
     import time
     from snoindex.repository.opensearch import Opensearch
     os = Opensearch(
@@ -348,7 +364,7 @@ def opensearch_repository(opensearch_props, generic_mapping):
             print(e)
             time.sleep(5)
     os.props.client.indices.create(
-        index='snowball_abcv1',
+        index=index_name_with_hash,
         body=generic_mapping
     )
     yield os
