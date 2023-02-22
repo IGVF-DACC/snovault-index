@@ -110,6 +110,7 @@ def raw_index_data_view():
             'b0b9c607-f8b4-4f02-93f4-9895b461334b'
         ],
         'item_type': 'snowball',
+        'index_name': 'snowball_abcv1',
         'linked_uuids': [
             '09d05b87-4d30-4dfb-b243-3327005095f2',
             '0abbd494-b852-433c-b360-93996f679dae',
@@ -218,6 +219,9 @@ def opensearch_props(opensearch_client):
 @pytest.fixture
 def generic_mapping():
     return {
+        'aliases': {
+            'snowball': {},
+        },
         'mappings': {
             'dynamic_templates': [
                 {
@@ -286,6 +290,9 @@ def generic_mapping():
                     'type': 'keyword',
                     'copy_to': '_all',
                 },
+                'index_name': {
+                    'type': 'keyword',
+                },
                 'object': {
                     'type': 'object',
                     'enabled': False,
@@ -341,7 +348,7 @@ def opensearch_repository(opensearch_props, generic_mapping):
             print(e)
             time.sleep(5)
     os.props.client.indices.create(
-        index=os.props.resources_index,
+        index='snowball_abcv1',
         body=generic_mapping
     )
     yield os

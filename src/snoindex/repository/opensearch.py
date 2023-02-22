@@ -107,7 +107,7 @@ class Opensearch:
     def refresh_resources_index(self) -> None:
         if self.props.resources_index is not None:
             self.props.client.indices.refresh(
-                self.props.resources_index
+                index=self.props.resources_index
             )
 
     def wait_for_resources_index_to_exist(self) -> None:
