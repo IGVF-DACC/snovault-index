@@ -95,9 +95,17 @@ class Opensearch:
         except ConflictError as e:
             logging.warning(f'Skipping: {e}')
 
+    def _get_old_indices(self, item: Item) -> List[str]:
+        index_alias = item.data['item_type']
+        return [
+            index
+            for index in self.pros.client.indices.get_alias(index_alias).keys()
+            if index != item.index
+        ]
+
     def delete_by_item(self, item: Item) -> None:
         self.props.client.delete_by_query(
-            index=item.data['item_type'],
+            index=self._get_old_indices(item),
             body={
                 'query': {
                     'ids': {
