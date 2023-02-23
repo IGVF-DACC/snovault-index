@@ -103,20 +103,24 @@ class Opensearch:
             if index != item.index
         ]
 
-    def delete_by_item(self, item: Item) -> None:
-        self.props.client.delete_by_query(
-            index=self._get_old_indices(item),
-            body={
-                'query': {
-                    'ids': {
-                        'values': [
-                            item.uuid,
-                        ]
-                    }
-                }
-            },
-            conflicts='proceed',
+    def maybe_delete_item_from_old_indices(self, item: Item) -> None:
+        old_indices = self._get_old_indices(
+            item
         )
+        if old_indices:
+            self.props.client.delete_by_query(
+                index=old_indices,
+                body={
+                    'query': {
+                        'ids': {
+                            'values': [
+                                item.uuid,
+                            ]
+                        }
+                    }
+                },
+                conflicts='proceed',
+            )
 
     def bulk_index_items(self, items: List[Item]) -> None:
         helpers.bulk(
