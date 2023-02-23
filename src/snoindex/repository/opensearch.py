@@ -99,7 +99,7 @@ class Opensearch:
         index_alias = item.data['item_type']
         return [
             index
-            for index in self.pros.client.indices.get_alias(index_alias).keys()
+            for index in self.props.client.indices.get_alias(index_alias).keys()
             if index != item.index
         ]
 
