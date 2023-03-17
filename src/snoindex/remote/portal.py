@@ -58,7 +58,7 @@ class Portal:
             data=raw_item,
             version=version,
             uuid=uuid,
-            index=raw_item['item_type'],
+            index=raw_item['index_name'],
         )
 
     def wait_for_portal_connection(self) -> None:

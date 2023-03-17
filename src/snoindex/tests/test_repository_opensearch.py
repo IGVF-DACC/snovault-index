@@ -46,14 +46,16 @@ def test_repository_opensearch_opensearch_init(opensearch_props):
 
 
 @pytest.mark.integration
-def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_renamed(opensearch_props, mocked_portal, generic_mapping):
+def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_renamed(opensearch_props, mocked_portal, generic_mapping, index_name_with_hash):
     from snoindex.repository.opensearch import Opensearch
     os = Opensearch(
         props=opensearch_props
     )
     os.clear()
     os.props.client.indices.create(
-        index=os.props.resources_index, body=generic_mapping)
+        index=index_name_with_hash,
+        body=generic_mapping
+    )
     item = mocked_portal.get_item('xyz123', 4)
     os.index_item(item)
     related_uuids = list(
