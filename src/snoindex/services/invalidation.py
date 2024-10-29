@@ -12,10 +12,16 @@ from snoindex.repository.queue.sqs import SQSQueue
 from snoindex.repository.opensearch import Opensearch
 
 from typing import Any
+from typing import Iterable
 from typing import List
 from typing import Set
 from typing import Tuple
 from typing import cast
+
+
+def batch(items: List[Any], batchsize: int) -> Iterable[List[Any]]:
+    for i in range(0, len(items), batchsize):
+        yield items[i:i + batchsize]
 
 
 def get_updated_uuids_from_transaction(message: InboundMessage) -> List[str]:
@@ -178,12 +184,13 @@ class BulkInvalidationServiceProps:
     transaction_queue: SQSQueue
     invalidation_queue: SQSQueue
     opensearch: Opensearch
-    messages_to_handle_per_run: int = 2000
+    messages_to_handle_per_run: int = 5000
+    related_uuids_search_batch_size: int = 1000
 
 
 class BulkInvalidationService:
 
-    def __init__(self, props: InvalidationServiceProps) -> None:
+    def __init__(self, props: BulkInvalidationServiceProps) -> None:
         self.props = props
         self.tracker = MessageTracker()
 
@@ -210,12 +217,25 @@ class BulkInvalidationService:
             all_updated_uuids: Set[str],
             all_renamed_uuids: Set[str]
     ) -> Set[str]:
-        return set(
-            self.props.opensearch.get_related_uuids_from_updated_and_renamed(
-                updated=list(all_updated_uuids),
-                renamed=list(all_renamed_uuids),
+        updated: List[str] = list(all_updated_uuids)
+        renamed: List[str] = list(all_renamed_uuids)
+        related_uuids: Set[str] = set()
+        # Do this in batches to not overload Opensearch.
+        for batch_updated in batch(updated, batchsize=self.props.related_uuids_search_batch_size):
+            related_uuids.update(
+                self.props.opensearch.get_related_uuids_from_updated_and_renamed(
+                    updated=batch_updated,
+                    renamed=[],
+                )
             )
-        ) - all_uuids
+        for batch_renamed in batch(renamed, batchsize=self.props.related_uuids_search_batch_size):
+            related_uuids.update(
+                self.props.opensearch.get_related_uuids_from_updated_and_renamed(
+                    updated=[],
+                    renamed=batch_renamed,
+                )
+            )
+        return related_uuids - all_uuids
 
     def make_outbound_messages(self, uuids: Set[str], message: InboundMessage) -> List[OutboundMessage]:
         outbound = []
