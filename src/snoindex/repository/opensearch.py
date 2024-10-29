@@ -74,7 +74,7 @@ class Opensearch:
         search = search.update_from_dict(
             query
         ).params(
-            request_timeout=60,
+            request_timeout=300,
         )
         for hit in search.scan():
             yield hit.meta.id

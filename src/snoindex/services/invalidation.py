@@ -13,6 +13,8 @@ from snoindex.repository.opensearch import Opensearch
 
 from typing import Any
 from typing import List
+from typing import Set
+from typing import Tuple
 from typing import cast
 
 
@@ -129,6 +131,146 @@ class InvalidationService:
                         message
                     ]
                 )
+
+    def mark_handled_messages_as_processed(self) -> None:
+        self.props.transaction_queue.mark_as_processed(
+            self.tracker.handled_messages
+        )
+
+    def get_new_messages_from_queue(self) -> None:
+        self.tracker.add_new_messages(
+            list(
+                self.props.transaction_queue.get_messages(
+                    desired_number_of_messages=self.props.messages_to_handle_per_run
+                )
+            )
+        )
+
+    def _should_log_stats(self) -> bool:
+        return (
+            self.tracker.number_all_messages != 0
+            and self.tracker.number_all_messages % 100 == 0
+        )
+
+    def log_stats(self) -> None:
+        if self._should_log_stats():
+            logging.warning(
+                f'{self.__class__.__name__}: {self.tracker.stats()}'
+            )
+
+    def clear(self) -> None:
+        self.tracker.clear()
+
+    def run_once(self) -> None:
+        self.get_new_messages_from_queue()
+        self.try_to_handle_messages()
+        self.mark_handled_messages_as_processed()
+        self.log_stats()
+        self.clear()
+
+    def poll(self) -> None:
+        while True:
+            self.run_once()
+
+
+@dataclass
+class BulkInvalidationServiceProps:
+    transaction_queue: SQSQueue
+    invalidation_queue: SQSQueue
+    opensearch: Opensearch
+    messages_to_handle_per_run: int = 2000
+
+
+class BulkInvalidationService:
+
+    def __init__(self, props: InvalidationServiceProps) -> None:
+        self.props = props
+        self.tracker = MessageTracker()
+
+    def parse_uuids_from_messages(self, messages: List[InboundMessage]) -> Tuple[Set[str], Set[str], Set[str]]:
+        all_uuids_from_transactions = set()
+        all_updated_uuids_from_transactions = set()
+        all_renamed_uuids_from_transactions = set()
+        for message in messages:
+            all_uuids = get_all_uuids_from_transaction(message)
+            all_uuids_from_transactions.update(all_uuids)
+            updated_uuids = get_updated_uuids_from_transaction(message)
+            all_updated_uuids_from_transactions.update(updated_uuids)
+            renamed_uuids = get_renamed_uuids_from_transaction(message)
+            all_renamed_uuids_from_transactions.update(renamed_uuids)
+        return (
+            all_uuids_from_transactions,
+            all_updated_uuids_from_transactions,
+            all_renamed_uuids_from_transactions,
+        )
+
+    def get_related_uuids(
+            self,
+            all_uuids: Set[str],
+            all_updated_uuids: Set[str],
+            all_renamed_uuids: Set[str]
+    ) -> Set[str]:
+        return set(
+            self.props.opensearch.get_related_uuids_from_updated_and_renamed(
+                updated=list(all_updated_uuids),
+                renamed=list(all_renamed_uuids),
+            )
+        ) - all_uuids
+
+    def make_outbound_messages(self, uuids: Set[str], message: InboundMessage) -> List[OutboundMessage]:
+        outbound = []
+        for uuid in uuids:
+            outbound.append(
+                make_outbound_message(
+                    message,
+                    uuid
+                )
+            )
+        return outbound
+
+    def handle_messages(self, messages: List[InboundMessage]) -> None:
+        # Split uuids into directly modified, updated, and renamed.
+        all_uuids, all_updated_uuids, all_renamed_uuids = self.parse_uuids_from_messages(
+            messages)
+        # Objects that were directly modified will be sent to indexing queue first.
+        primary_outbound = self.make_outbound_messages(
+            all_uuids,
+            messages[0],
+        )
+        logging.warning(
+            f'{self.__class__.__name__}: Primary outbound = {len(primary_outbound)}')
+        # Search for all objects that are invalidated because of the directly modified objects.
+        related_uuids = self.get_related_uuids(
+            all_uuids, all_updated_uuids, all_renamed_uuids)
+        # Objects that are invalidated because of another object will be sent to indexing queue second.
+        related_outbound = self.make_outbound_messages(
+            related_uuids,
+            messages[0],
+        )
+        logging.warning(
+            f'{self.__class__.__name__}: Related outbound = {len(related_outbound)}')
+        # Send directly modified objects to invalidation queue.
+        self.props.invalidation_queue.send_messages(
+            primary_outbound
+        )
+        # Send invalidated but not directly modified objects to invalidation queue.
+        self.props.invalidation_queue.send_messages(
+            related_outbound
+        )
+        # Record handled messages.
+        self.tracker.add_handled_messages(messages)
+
+    def try_to_handle_messages(self) -> None:
+        messages = self.tracker.new_messages
+        if not messages:
+            return
+        try:
+            self.handle_messages(messages)
+        except Exception as e:
+            logging.error(e)
+            self.tracker.add_failed_messages(
+                messages
+            )
 
     def mark_handled_messages_as_processed(self) -> None:
         self.props.transaction_queue.mark_as_processed(
