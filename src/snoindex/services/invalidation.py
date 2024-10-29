@@ -231,24 +231,30 @@ class BulkInvalidationService:
     def handle_messages(self, messages: List[InboundMessage]) -> None:
         # Split uuids into directly modified, updated, and renamed.
         all_uuids, all_updated_uuids, all_renamed_uuids = self.parse_uuids_from_messages(
-            messages)
+            messages
+        )
         # Objects that were directly modified will be sent to indexing queue first.
         primary_outbound = self.make_outbound_messages(
             all_uuids,
             messages[0],
         )
         logging.warning(
-            f'{self.__class__.__name__}: Primary outbound = {len(primary_outbound)}')
+            f'{self.__class__.__name__}: Primary outbound = {len(primary_outbound)}'
+        )
         # Search for all objects that are invalidated because of the directly modified objects.
         related_uuids = self.get_related_uuids(
-            all_uuids, all_updated_uuids, all_renamed_uuids)
+            all_uuids,
+            all_updated_uuids,
+            all_renamed_uuids,
+        )
         # Objects that are invalidated because of another object will be sent to indexing queue second.
         related_outbound = self.make_outbound_messages(
             related_uuids,
             messages[0],
         )
         logging.warning(
-            f'{self.__class__.__name__}: Related outbound = {len(related_outbound)}')
+            f'{self.__class__.__name__}: Related outbound = {len(related_outbound)}'
+        )
         # Send directly modified objects to invalidation queue.
         self.props.invalidation_queue.send_messages(
             primary_outbound
