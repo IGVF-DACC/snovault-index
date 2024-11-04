@@ -447,6 +447,21 @@ def bulk_invalidation_queue(localstack_sqs_client):
     queue.clear()
 
 
+def get_inbound_message_body(updated, renamed):
+    return {
+        'metadata': {
+            'xid': 1234,
+            'tid': 'abcd',
+        },
+        'data': {
+            'payload': {
+                'updated': updated,
+                'renamed': renamed,
+            }
+        }
+    }
+
+
 @pytest.fixture
 def mock_transaction_message():
     import json
@@ -473,6 +488,28 @@ def mock_transaction_message():
         md5_of_body='abc',
         body=json.dumps(message_body),
     )
+
+
+@pytest.fixture
+def bulk_mock_transaction_messages():
+    messages = []
+    import json
+    from snoindex.domain.message import InboundMessage
+    for i in range(10):
+        for y in range(5):
+            message_body = get_inbound_message_body(
+                [f'{y}-updated'],
+                [f'{y}-renamed'],
+            )
+            messages.append(
+                InboundMessage(
+                    message_id=message_body,
+                    receipt_handle='xyz',
+                    md5_of_body='abc',
+                    body=json.dumps(message_body),
+                )
+            )
+    return messages
 
 
 @pytest.fixture
@@ -511,10 +548,30 @@ def invalidation_service_props(transaction_queue, invalidation_queue, opensearch
 
 
 @pytest.fixture(scope='function')
+def bulk_invalidation_service_props(transaction_queue, invalidation_queue, opensearch_repository):
+    from snoindex.services.invalidation import BulkInvalidationServiceProps
+    return BulkInvalidationServiceProps(
+        transaction_queue=transaction_queue,
+        invalidation_queue=invalidation_queue,
+        opensearch=opensearch_repository,
+        messages_to_handle_per_run=5000,
+        related_uuids_search_batch_size=1000,
+    )
+
+
+@pytest.fixture(scope='function')
 def invalidation_service(invalidation_service_props):
     from snoindex.services.invalidation import InvalidationService
     return InvalidationService(
         props=invalidation_service_props
+    )
+
+
+@pytest.fixture(scope='function')
+def bulk_invalidation_service(bulk_invalidation_service_props):
+    from snoindex.services.invalidation import BulkInvalidationService
+    return BulkInvalidationService(
+        props=bulk_invalidation_service_props
     )
 
 
