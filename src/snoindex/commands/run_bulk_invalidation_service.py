@@ -42,7 +42,7 @@ def make_transaction_queue_from_config(config: BulkInvalidationServiceConfig) ->
         props=SQSQueueProps(
             client=config.sqs_client,
             queue_url=config.transaction_queue_url,
-            visibility_timeout=600,
+            visibility_timeout=1800,
         )
     )
 
