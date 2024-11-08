@@ -186,6 +186,7 @@ class BulkInvalidationServiceProps:
     opensearch: Opensearch
     messages_to_handle_per_run: int = 5000
     related_uuids_search_batch_size: int = 1000
+    get_messages_timeout_seconds: int = 900
 
 
 class BulkInvalidationService:
@@ -307,7 +308,9 @@ class BulkInvalidationService:
         self.tracker.add_new_messages(
             list(
                 self.props.transaction_queue.get_messages(
-                    desired_number_of_messages=self.props.messages_to_handle_per_run
+                    desired_number_of_messages=self.props.messages_to_handle_per_run,
+                    # Give up pulling messages before visibility_timeout resets.
+                    timeout_seconds=self.props.get_messages_timeout_seconds,
                 )
             )
         )

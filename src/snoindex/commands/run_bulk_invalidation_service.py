@@ -79,6 +79,8 @@ def make_bulk_invalidation_service_from_config(config: BulkInvalidationServiceCo
             opensearch=opensearch,
             messages_to_handle_per_run=5000,
             related_uuids_search_batch_size=1000,
+            # Should be less than visibility_timeout of transaction_queue.
+            get_messages_timeout_seconds=1500,
         )
     )
     wait(bulk_invalidation_service)
