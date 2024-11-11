@@ -96,6 +96,51 @@ def test_repository_queue_sqs_get_messages(queue_for_testing):
 
 
 @pytest.mark.integration
+def test_repository_queue_sqs_get_messages_with_timeout(queue_for_testing, caplog):
+    import logging
+    caplog.set_level(logging.INFO)
+    from snoindex.domain.message import OutboundMessage
+    from snoindex.domain.message import InboundMessage
+    assert queue_for_testing._queue_has_zero_messages()
+    messages = []
+    for i in range(20):
+        messages.append(
+            OutboundMessage(
+                unique_id=f'xyz-{i}',
+                body={'some': f'xyz-{i}-data'}
+            )
+        )
+    queue_for_testing.send_messages(
+        messages
+    )
+    new_messages = list(
+        queue_for_testing.get_messages(
+            desired_number_of_messages=5,
+            timeout_seconds=0,
+        )
+    )
+    assert 'Reached timeout in getting messages from queue' in caplog.text
+    new_messages = list(
+        queue_for_testing.get_messages(
+            desired_number_of_messages=5
+        )
+    )
+    assert isinstance(new_messages[0], InboundMessage)
+    assert new_messages[0].json_body['some'].startswith('xyz')
+    assert len(new_messages) == 5
+    queue_for_testing.mark_as_processed(new_messages)
+    new_messages = list(
+        queue_for_testing.get_messages(
+            desired_number_of_messages=15,
+            timeout_seconds=10,
+        )
+    )
+    assert len(new_messages) == 15
+    queue_for_testing.mark_as_processed(new_messages)
+    assert int(queue_for_testing.info()['ApproximateNumberOfMessages']) == 0
+
+
+@pytest.mark.integration
 def test_repository_queue_sqs_mark_as_processed(queue_for_testing):
     from snoindex.domain.message import OutboundMessage
     assert queue_for_testing._queue_has_zero_messages()

@@ -74,7 +74,7 @@ class Opensearch:
         search = search.update_from_dict(
             query
         ).params(
-            request_timeout=60,
+            request_timeout=300,
         )
         for hit in search.scan():
             yield hit.meta.id
@@ -99,7 +99,7 @@ class Opensearch:
         index_alias = item.data['item_type']
         return [
             index
-            for index in self.props.client.indices.get_alias(index_alias).keys()
+            for index in self.props.client.indices.get_alias(index=index_alias).keys()
             if index != item.index
         ]
 

@@ -45,6 +45,15 @@ class InvalidationServiceConfig:
 
 
 @dataclass
+class BulkInvalidationServiceConfig:
+    transaction_queue_url: str
+    invalidation_queue_url: str
+    opensearch_client: OpenSearch
+    opensearch_resources_index: Optional[str]
+    sqs_client: BaseClient
+
+
+@dataclass
 class IndexingServiceConfig:
     backend_url: str
     auth: Tuple[str, str]

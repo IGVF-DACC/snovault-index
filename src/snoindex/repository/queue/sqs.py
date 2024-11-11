@@ -6,9 +6,9 @@ from botocore.client import BaseClient
 from dataclasses import dataclass
 
 from typing import Any
-from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Optional
 
 from snoindex.repository.queue.constants import AWS_SQS_MAX_NUMBER
 
@@ -67,10 +67,18 @@ class SQSQueue:
 
     def get_messages(
             self,
-            desired_number_of_messages: int = 50
+            desired_number_of_messages: int = 50,
+            timeout_seconds: Optional[int] = None,
     ) -> Iterable[InboundMessage]:
+        start_time = time.monotonic()
         number_of_received_messages = 0
         while True:
+            time_so_far = time.monotonic() - start_time
+            if timeout_seconds is not None and time_so_far >= timeout_seconds:
+                logging.info(
+                    f'Reached timeout in getting messages from queue: {time_so_far}'
+                )
+                break
             number_of_messages_left_to_get = (
                 desired_number_of_messages - number_of_received_messages
             )
@@ -114,7 +122,6 @@ class SQSQueue:
 
     def wait_for_queue_to_exist(self) -> None:
         logging.info(f'Connecting to queue: {self.props.queue_url}')
-        caught = None
         attempt = 0
         while True:
             attempt += 1
