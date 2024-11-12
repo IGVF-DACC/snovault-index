@@ -182,7 +182,8 @@ def raw_index_data_view(index_name_with_hash):
         'unique_keys': {
             'accession': ['SNOSS001SER']
         },
-        'uuid': '4cead359-10e9-49a8-9d20-f05b2499b919'
+        'uuid': '4cead359-10e9-49a8-9d20-f05b2499b919',
+        'xmin': 4444,
     }
 
 
@@ -301,6 +302,9 @@ def generic_mapping(alias_for_index_name, alias_for_all_resource_indices):
                 },
                 'tid': {
                     'type': 'keyword',
+                },
+                'xmin': {
+                    'type': 'integer',
                 },
                 'item_type': {
                     'type': 'keyword',

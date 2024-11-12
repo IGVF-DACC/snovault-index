@@ -37,8 +37,8 @@ class IndexingService:
         self.tracker = MessageTracker()
 
     def handle_message(self, message: InboundMessage) -> None:
-        uuid, version = get_uuid_and_version_from_message(message)
-        item = self.props.portal.get_item(uuid, version)
+        uuid, _ = get_uuid_and_version_from_message(message)
+        item = self.props.portal.get_item(uuid)
         self.props.opensearch.maybe_delete_item_from_old_indices(item)
         self.props.opensearch.index_item(item)
         self.tracker.add_handled_messages([message])
@@ -113,14 +113,11 @@ class BulkIndexingService:
     def handle_messages(self, messages: List[InboundMessage]) -> None:
         items = []
         for message in messages:
-            uuid, version = get_uuid_and_version_from_message(
+            uuid, _ = get_uuid_and_version_from_message(
                 message
             )
             items.append(
-                self.props.portal.get_item(
-                    uuid,
-                    version,
-                )
+                self.props.portal.get_item(uuid)
             )
         self.props.opensearch.bulk_index_items(
             items
