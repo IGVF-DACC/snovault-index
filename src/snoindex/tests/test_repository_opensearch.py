@@ -56,7 +56,7 @@ def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_ren
         index=index_name_with_hash,
         body=generic_mapping
     )
-    item = mocked_portal.get_item('xyz123', 4)
+    item = mocked_portal.get_item('xyz123')
     os.index_item(item)
     related_uuids = list(
         os.get_related_uuids_from_updated_and_renamed(
@@ -73,7 +73,7 @@ def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_ren
     )
     assert len(related_uuids) == 1
     assert related_uuids[0] == 'xyz123'
-    item = mocked_portal.get_item('xyz345', 4)
+    item = mocked_portal.get_item('xyz345')
     os.index_item(item)
     related_uuids = list(
         os.get_related_uuids_from_updated_and_renamed(
@@ -88,29 +88,31 @@ def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_ren
 
 @pytest.mark.integration
 def test_repository_opensearch_opensearch_index_item(opensearch_repository, mocked_portal, get_all_results):
-    item = mocked_portal.get_item('xyz123', 4)
+    item = mocked_portal.get_item('xyz123')
     opensearch_repository.index_item(item)
     opensearch_repository.refresh_resources_index()
     for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
-        assert hit['_version'] == 4
+        assert hit['_version'] == 4444
     # Higher version allowed.
-    item = mocked_portal.get_item('xyz123', 5)
+    item = mocked_portal.get_item('xyz123')
+    item.version = 5555
     opensearch_repository.index_item(item)
     opensearch_repository.refresh_resources_index()
     for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
-        assert hit['_version'] == 5
+        assert hit['_version'] == 5555
     # Lower version ignored.
-    item = mocked_portal.get_item('xyz123', 3)
+    item = mocked_portal.get_item('xyz123')
+    item.version = 3333
     opensearch_repository.index_item(item)
     opensearch_repository.refresh_resources_index()
     for hit in get_all_results(opensearch_repository.props.client)['hits']['hits']:
-        assert hit['_version'] == 5
+        assert hit['_version'] == 5555
 
 
 @pytest.mark.integration
 def test_repository_opensearch_opensearch_bulk_index_items(opensearch_repository, mocked_portal, get_all_results):
-    item1 = mocked_portal.get_item('xyz123', 4)
-    item2 = mocked_portal.get_item('xyz345', 4)
+    item1 = mocked_portal.get_item('xyz123')
+    item2 = mocked_portal.get_item('xyz345')
     opensearch_repository.bulk_index_items(
         [
             item1,
@@ -128,8 +130,8 @@ def test_repository_opensearch_opensearch_bulk_index_items(opensearch_repository
 
 @pytest.mark.integration
 def test_repository_opensearch_opensearch_referesh_resources_index(opensearch_repository, mocked_portal, get_all_results):
-    item1 = mocked_portal.get_item('xyz123', 4)
-    item2 = mocked_portal.get_item('xyz345', 4)
+    item1 = mocked_portal.get_item('xyz123')
+    item2 = mocked_portal.get_item('xyz345')
     opensearch_repository.bulk_index_items(
         [
             item1,
