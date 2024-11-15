@@ -53,7 +53,7 @@ def test_services_bulk_invalidation_bulk_invalidation_service_get_related_uuids(
         mock_transaction_message,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     bulk_invalidation_service.props.opensearch.index_item(item)
     all_uuids, all_updated_uuids, all_renamed_uuids = bulk_invalidation_service.parse_uuids_from_messages(
         [
@@ -96,7 +96,7 @@ def test_services_bulk_invalidation_bulk_invalidation_service_handle_messages(
         mock_transaction_message,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     bulk_invalidation_service.props.opensearch.index_item(item)
     bulk_invalidation_service.handle_messages([mock_transaction_message])
     messages = list(
@@ -127,7 +127,7 @@ def test_services_bulk_invalidation_bulk_invalidation_service_try_to_handle_mess
         mocked_portal,
         mocker,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     bulk_invalidation_service.props.opensearch.index_item(item)
     mocker.patch(
         'snoindex.services.invalidation.BulkInvalidationService.handle_messages',
@@ -147,7 +147,7 @@ def test_services_bulk_invalidation_bulk_invalidation_service_mark_handled_messa
         mock_transaction_message_outbound,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     bulk_invalidation_service.props.opensearch.index_item(item)
     bulk_invalidation_service.props.transaction_queue.send_messages(
         [
@@ -236,7 +236,7 @@ def test_services_bulk_invalidation_bulk_invalidation_service_run_once(
         mock_transaction_message_outbound,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     bulk_invalidation_service.props.opensearch.index_item(item)
     bulk_invalidation_service.props.transaction_queue.send_messages(
         [

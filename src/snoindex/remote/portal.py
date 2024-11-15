@@ -52,11 +52,11 @@ class Portal:
             self.props.auth,
         ).json()
 
-    def get_item(self, uuid: str, version: int) -> Item:
+    def get_item(self, uuid: str) -> Item:
         raw_item = self.get_raw_item_by_uuid(uuid)
         return Item(
             data=raw_item,
-            version=version,
+            version=int(raw_item['xmin']),
             uuid=uuid,
             index=raw_item['index_name'],
         )

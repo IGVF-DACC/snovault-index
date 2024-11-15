@@ -89,7 +89,7 @@ def test_services_invalidation_invalidation_service_invalidate_all_related_uuids
         mock_transaction_message,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     invalidation_service.invalidate_all_related_uuids(mock_transaction_message)
     message = list(
@@ -107,7 +107,7 @@ def test_services_invalidation_invalidation_service_handle_message(
         mock_transaction_message,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     invalidation_service.handle_message(mock_transaction_message)
     messages = list(
@@ -138,7 +138,7 @@ def test_services_invalidation_invalidation_service_try_to_handle_message(
         mocked_portal,
         mocker,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     mocker.patch(
         'snoindex.services.invalidation.InvalidationService.handle_message',
@@ -157,7 +157,7 @@ def test_services_invalidation_invalidation_service_mark_handled_messages_as_pro
         mock_transaction_message_outbound,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     invalidation_service.props.transaction_queue.send_messages(
         [
@@ -247,7 +247,7 @@ def test_services_invalidation_invalidation_service_run_once(
         mock_transaction_message_outbound,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     invalidation_service.props.transaction_queue.send_messages(
         [

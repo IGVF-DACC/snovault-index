@@ -46,9 +46,9 @@ def test_remote_portal_portal_get_item(portal_props, raw_index_data_view, mocker
     portal = Portal(
         props=portal_props
     )
-    item = portal.get_item('abc123', 4)
+    item = portal.get_item('abc123')
     assert isinstance(item, Item)
-    assert item.version == 4
+    assert item.version == 4444
     assert item.uuid == 'abc123'
     assert item.index == 'snowball_abcv1'
     assert item.data == raw_index_data_view

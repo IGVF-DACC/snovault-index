@@ -275,7 +275,7 @@ def test_services_run_invalidation_and_indexing_services_together(
         mock_transaction_message_outbound,
         mocked_portal,
 ):
-    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919', 4)
+    item = mocked_portal.get_item('4cead359-10e9-49a8-9d20-f05b2499b919')
     invalidation_service.props.opensearch.index_item(item)
     invalidation_service.props.transaction_queue.send_messages(
         [
