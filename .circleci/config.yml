@@ -14,25 +14,27 @@ workflows:
 jobs:
   lint:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.11
     working_directory: ~/snovault-index
     steps:
       - checkout
+      - run: pip install pip==26.2.2
       - run: pip install pre-commit==2.17.0
       - run: pre-commit run --all-files
 
   snoindex-mypy:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.11
     working_directory: ~/snovault-index
     steps:
       - checkout
+      - run: pip install pip==26.2.2
       - run: pip install mypy==0.982 types-requests==2.28.11.1
       - run: mypy .
 
   snoindex-pytest:
     machine:
-      image: ubuntu-2004:202111-02
+      image: ubuntu-2004:2023.10.1
       docker_layer_caching: true
     resource_class: medium
     working_directory: ~/snovault-index
