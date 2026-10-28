@@ -53,6 +53,9 @@ def get_search(client: OpenSearch, index: Optional[str]) -> Search:
 class OpensearchProps:
     client: OpenSearch
     resources_index: Optional[str] = None
+    scroll_request_timeout: int = 300
+    scroll_page_size: int = 10000
+    scroll_keep_alive: str = '10m'
 
 
 class Opensearch:
@@ -60,12 +63,12 @@ class Opensearch:
     def __init__(self, props: OpensearchProps):
         self.props = props
 
+    # Call os.refresh_resources_index() before calling this function.
     def get_related_uuids_from_updated_and_renamed(
             self,
             updated: List[str],
             renamed: List[str],
     ) -> Iterator[str]:
-        # Call os.refresh_resources_index() before calling this function.
         query = get_related_uuids_query(updated, renamed)
         search = get_search(
             self.props.client,
@@ -74,7 +77,13 @@ class Opensearch:
         search = search.update_from_dict(
             query
         ).params(
-            request_timeout=300,
+            request_timeout=self.props.scroll_request_timeout,
+            scroll_kwargs={
+                # Have to pass this for subsequent scroll requests.
+                'request_timeout': self.props.scroll_request_timeout,
+            },
+            size=self.props.scroll_page_size,
+            scroll=self.props.scroll_keep_alive,
         )
         for hit in search.scan():
             yield hit.meta.id
