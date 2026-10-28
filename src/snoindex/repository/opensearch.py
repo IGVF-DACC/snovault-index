@@ -63,7 +63,7 @@ class Opensearch:
     def __init__(self, props: OpensearchProps):
         self.props = props
 
-    # Call os.refresh_resources_index() before calling this function.
+    # Call self.refresh_resources_index() before calling this function.
     def get_related_uuids_from_updated_and_renamed(
             self,
             updated: List[str],

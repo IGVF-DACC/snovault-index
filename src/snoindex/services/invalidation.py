@@ -1,5 +1,7 @@
 import logging
 
+import time
+
 from dataclasses import dataclass
 
 from snoindex.domain.message import InboundMessage
@@ -17,8 +19,6 @@ from typing import List
 from typing import Set
 from typing import Tuple
 from typing import cast
-
-import time
 
 
 def batch(items: List[Any], batchsize: int) -> Iterable[List[Any]]:
@@ -106,7 +106,7 @@ class InvalidationService:
         already_invalidated_uuids = get_all_uuids_from_transaction(message)
         updated = get_updated_uuids_from_transaction(message)
         renamed = get_renamed_uuids_from_transaction(message)
-        # Has to be called explicitly now.
+        # Called before related uuids search.
         self.props.opensearch.refresh_resources_index()
         related_uuids = self.props.opensearch.get_related_uuids_from_updated_and_renamed(
             updated,
@@ -281,7 +281,7 @@ class BulkInvalidationService:
             messages[0],
         )
         logging.warning(
-            f'{self.__class__.__name__}: Related outbound = {len(related_outbound)}'
+            f'{self.__class__.__name__}: Related outbound = {len(related_outbound)} '
             f'(search took {time.monotonic() - search_start:.1f}s)'
         )
         # Send directly modified objects to invalidation queue.
