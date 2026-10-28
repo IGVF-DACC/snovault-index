@@ -58,6 +58,7 @@ def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_ren
     )
     item = mocked_portal.get_item('xyz123')
     os.index_item(item)
+    os.refresh_resources_index()
     related_uuids = list(
         os.get_related_uuids_from_updated_and_renamed(
             updated=[],
@@ -75,6 +76,7 @@ def test_repository_opensearch_opensearch_get_related_uuids_from_updated_and_ren
     assert related_uuids[0] == 'xyz123'
     item = mocked_portal.get_item('xyz345')
     os.index_item(item)
+    os.refresh_resources_index()
     related_uuids = list(
         os.get_related_uuids_from_updated_and_renamed(
             updated=[],
