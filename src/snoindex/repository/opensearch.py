@@ -65,7 +65,7 @@ class Opensearch:
             updated: List[str],
             renamed: List[str],
     ) -> Iterator[str]:
-        self.refresh_resources_index()
+        # Call os.refresh_resources_index() before calling this function.
         query = get_related_uuids_query(updated, renamed)
         search = get_search(
             self.props.client,

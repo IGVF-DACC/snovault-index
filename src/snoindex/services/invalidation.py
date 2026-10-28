@@ -104,6 +104,8 @@ class InvalidationService:
         already_invalidated_uuids = get_all_uuids_from_transaction(message)
         updated = get_updated_uuids_from_transaction(message)
         renamed = get_renamed_uuids_from_transaction(message)
+        # Has to be called explicitly now.
+        self.props.opensearch.refresh_resources_index()
         related_uuids = self.props.opensearch.get_related_uuids_from_updated_and_renamed(
             updated,
             renamed
@@ -221,6 +223,8 @@ class BulkInvalidationService:
         updated: List[str] = list(all_updated_uuids)
         renamed: List[str] = list(all_renamed_uuids)
         related_uuids: Set[str] = set()
+        # Called once before batches.
+        self.props.opensearch.refresh_resources_index()
         # Do this in batches to not overload Opensearch.
         for batch_updated in batch(updated, batchsize=self.props.related_uuids_search_batch_size):
             related_uuids.update(
