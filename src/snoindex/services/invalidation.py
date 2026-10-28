@@ -18,6 +18,8 @@ from typing import Set
 from typing import Tuple
 from typing import cast
 
+import time
+
 
 def batch(items: List[Any], batchsize: int) -> Iterable[List[Any]]:
     for i in range(0, len(items), batchsize):
@@ -266,6 +268,7 @@ class BulkInvalidationService:
         logging.warning(
             f'{self.__class__.__name__}: Primary outbound = {len(primary_outbound)}'
         )
+        search_start = time.monotonic()
         # Search for all objects that are invalidated because of the directly modified objects.
         related_uuids = self.get_related_uuids(
             all_uuids,
@@ -279,6 +282,7 @@ class BulkInvalidationService:
         )
         logging.warning(
             f'{self.__class__.__name__}: Related outbound = {len(related_outbound)}'
+            f'(search took {time.monotonic() - search_start:.1f}s)'
         )
         # Send directly modified objects to invalidation queue.
         self.props.invalidation_queue.send_messages(
